@@ -2501,7 +2501,7 @@ window.onerror=function(msg,src,line,col,err){
   localStorage.setItem('ipo_subs_hidden',JSON.stringify([...hiddenSubs]));
 })();
 
-try{ render(); }catch(e){
+try{ loadIPOData(); }catch(e){
   document.body.innerHTML='<div style="background:#0d1117;color:#e74c3c;padding:40px;font-family:sans-serif"><h2>渲染错误</h2><pre>'+e.message+'\n\n'+e.stack+'</pre></div>';
 }
 
