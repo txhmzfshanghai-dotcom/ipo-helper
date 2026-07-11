@@ -1,0 +1,398 @@
+<!DOCTYPE html>
+<html lang="zh-HK">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>港新股打新计算器</title>
+<style>
+:root{--red:#e74c3c;--green:#27ae60;--orange:#f39c12;--bg:#0d1117;--card:#161b22;--border:#30363d;--text:#c9d1d9;--muted:#8b949e;--accent:#58a6ff;--gold:#f0c040}
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI','PingFang HK','Microsoft YaHei',sans-serif;background:var(--bg);color:var(--text);line-height:1.5;min-height:100vh;padding-bottom:160px}
+.app{max-width:800px;margin:0 auto;padding:12px}
+h1{font-size:1.15em;color:#fff;text-align:center;margin:8px 0 16px}
+
+/* Card */
+.card{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:14px;margin-bottom:10px}
+.card h3{color:#fff;font-size:.9em;margin-bottom:10px}
+
+/* Fund inputs */
+.fund-row{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:8px}
+.fund-item label{display:block;color:var(--muted);font-size:.72em;margin-bottom:3px}
+.fund-item input{width:100%;padding:8px 10px;background:var(--bg);border:1px solid var(--border);border-radius:8px;color:#fff;font-size:.85em}
+.fund-item input:focus{outline:none;border-color:var(--accent)}
+
+/* Conflict bar */
+.conflict-bar{background:rgba(243,156,18,.1);border:1px solid rgba(243,156,18,.3);border-radius:10px;padding:10px 14px;margin-bottom:10px;font-size:.76em;color:var(--orange)}
+
+/* Filter */
+.filter-bar{display:flex;gap:6px;margin-bottom:10px;flex-wrap:wrap}
+.filter-btn{padding:6px 14px;border:1px solid var(--border);border-radius:8px;font-size:.76em;color:var(--muted);cursor:pointer;background:none;transition:all .15s}
+.filter-btn.active{border-color:var(--accent);color:var(--accent);background:rgba(88,166,255,.1)}
+
+/* Stock card */
+.stock-card{background:var(--card);border:1px solid var(--border);border-radius:12px;margin-bottom:10px;overflow:hidden}
+.stock-card.sel{border-color:var(--accent)}
+.stock-hdr{display:flex;align-items:center;padding:12px;gap:8px;cursor:pointer}
+.stock-hdr .chk{width:22px;height:22px;border:2px solid var(--border);border-radius:6px;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:.6em;color:#fff}
+.stock-hdr .chk.on{background:var(--accent);border-color:var(--accent)}
+.stock-info{flex:1;min-width:0}
+.stock-info .n{color:#fff;font-weight:600;font-size:.85em}
+.stock-info .n code{color:var(--muted);font-weight:400;font-size:.85em}
+.stock-info .m{color:var(--muted);font-size:.7em;margin-top:2px}
+.stock-info .m .deadline{color:var(--red)}
+.stock-hdr .arrow{color:var(--muted);font-size:.7em;flex-shrink:0}
+.stock-hdr .detail{color:var(--muted);font-size:.9em;padding:2px 8px;flex-shrink:0;cursor:pointer}
+.stock-tags{display:flex;gap:6px;flex-wrap:wrap;padding:0 12px 10px}
+.tag{padding:2px 8px;border-radius:6px;font-size:.65em;color:var(--muted);background:rgba(139,148,158,.1)}
+.tag-dec{color:var(--accent);background:rgba(88,166,255,.1)}
+.tag-note{color:var(--orange);background:rgba(243,156,18,.1);max-width:280px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+
+/* Tier table */
+.tier-wrap{border-top:1px solid var(--border);padding:6px 0;overflow-x:auto;-webkit-overflow-scrolling:touch}
+.tier-table{min-width:620px;font-size:.72em}
+.tier-row{display:flex}
+.tier-hdr{background:#21262d}
+.tier-hdr .tier-cell{color:#fff;font-weight:600;padding:8px 6px;font-size:.75em}
+.tier-cell{padding:8px 6px;border-bottom:1px solid rgba(48,54,61,.4)}
+.tier-cell.lots{width:70px;text-align:right}
+.tier-cell.amt{width:95px;text-align:right}
+.tier-cell.cash{width:85px;text-align:right}
+.tier-cell.pick{width:90px;text-align:center}
+.tier-cell .remain{display:block;font-size:.7em;color:var(--muted);font-weight:400}
+.pick-btn{padding:4px 12px;border:1px solid var(--border);border-radius:6px;font-size:.75em;color:var(--muted);cursor:pointer;background:none;transition:all .15s;white-space:nowrap}
+.pick-btn:hover{border-color:var(--accent);color:var(--accent)}
+.pick-btn.done{background:rgba(88,166,255,.2);border-color:var(--accent);color:var(--accent)}
+.pick-btn.over{color:var(--red);border-color:rgba(231,76,60,.4);background:rgba(231,76,60,.1);cursor:not-allowed}
+
+/* Bottom bar */
+.bottom-bar{position:fixed;bottom:0;left:0;right:0;background:var(--card);border-top:2px solid var(--border);padding:14px 16px;z-index:50}
+.bottom-bar .totals{display:flex;gap:8px}
+.bottom-bar .t{flex:1;text-align:center;padding:10px;border-radius:8px;background:rgba(88,166,255,.06)}
+.bottom-bar .t.over{background:rgba(231,76,60,.1)}
+.bottom-bar .t .v{font-size:1.1em;font-weight:700;color:var(--accent)}
+.bottom-bar .t.over .v{color:var(--red)}
+.bottom-bar .t .l{font-size:.68em;color:var(--muted)}
+.bottom-bar .warn{text-align:center;color:var(--red);font-size:.75em;margin-top:8px;font-weight:600}
+
+/* Modal */
+.modal-overlay{position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,.7);z-index:100;display:flex;align-items:center;justify-content:center;padding:16px}
+.modal{background:var(--card);border:1px solid var(--border);border-radius:16px;padding:20px;max-width:480px;width:100%;max-height:80vh;overflow-y:auto;position:relative}
+.modal .close{position:absolute;top:10px;right:14px;font-size:1.2em;color:var(--muted);cursor:pointer;background:none;border:none}
+.modal h3{color:#fff;font-size:1em;margin-bottom:12px;padding-right:30px}
+.modal .row{display:flex;padding:8px 0;border-bottom:1px solid rgba(48,54,61,.3);font-size:.78em}
+.modal .row .dl{width:80px;color:var(--muted);flex-shrink:0}
+.modal .row .dv{flex:1;color:var(--text)}
+
+/* Reset btn */
+.reset-bar{text-align:center;margin-top:8px}
+.reset-btn{padding:6px 16px;background:none;border:1px solid var(--border);border-radius:8px;color:var(--muted);font-size:.7em;cursor:pointer}
+
+.empty{text-align:center;color:var(--muted);padding:40px 0;font-size:.85em}
+
+@media(max-width:480px){
+  .fund-row{grid-template-columns:1fr 1fr 1fr}
+  .tier-table{min-width:520px;font-size:.68em}
+  .tier-cell{padding:6px 4px}
+  .tier-cell.lots{width:55px}.tier-cell.amt{width:75px}.tier-cell.cash{width:65px}.tier-cell.pick{width:70px}
+  .pick-btn{padding:3px 8px;font-size:.7em}
+}
+</style>
+</head>
+<body>
+<div class="app" id="app"></div>
+<div id="modalCtn"></div>
+
+<script>
+// ==================== DATA ====================
+const IPO_DATA = JSON.parse(`[{"code":"02667","name":"同仁堂医养","type":"inst","price":"5.48-6.21","lot":500,"fee":3136,"subStart":"2026-06-26","subEnd":"2026-07-02","listDate":"2026-07-07","cornerstone":"3家/47%","cs":4,"hot":"⚪偏低","hs":1,"mcap":"~27亿","gs":true,"sponsor":"中金","loc":"北京","sh":"同仁堂集团84%","gain":"+10~25%","dec":"适度·一手","note":"降价25%重招·Aurora基石削减","pubLots":21631,"interest":1,"mech":"B机制","margin":"18","jiaTiers":[30,70,140,200,400,600,1000,1400,1800],"yiTiers":[500,600,700,800,1000,1200,1500,2000],"allLots":[{"lots":1,"amt":3136},{"lots":2,"amt":6273},{"lots":3,"amt":9409},{"lots":4,"amt":12545},{"lots":5,"amt":15682},{"lots":6,"amt":18818},{"lots":7,"amt":21954},{"lots":8,"amt":25091},{"lots":9,"amt":28227},{"lots":10,"amt":31363},{"lots":12,"amt":37636},{"lots":14,"amt":43908},{"lots":16,"amt":50181},{"lots":18,"amt":56454},{"lots":20,"amt":62726},{"lots":30,"amt":94089},{"lots":40,"amt":125453},{"lots":50,"amt":156816},{"lots":60,"amt":188179},{"lots":70,"amt":219542},{"lots":80,"amt":250905},{"lots":90,"amt":282268},{"lots":100,"amt":313631},{"lots":120,"amt":376358},{"lots":140,"amt":439084},{"lots":160,"amt":501810},{"lots":180,"amt":564537},{"lots":200,"amt":627263},{"lots":400,"amt":1254526},{"lots":600,"amt":1881788},{"lots":800,"amt":2509051},{"lots":1000,"amt":3136314}]},{"code":"06880","name":"MOMENTA-W","type":"inst","price":"295.60","lot":20,"fee":5972,"subStart":"2026-06-29","subEnd":"2026-07-03","listDate":"2026-07-08","cornerstone":"14家/50%","cs":6,"hot":"🔥极高","hs":5,"mcap":"~590亿","gs":true,"sponsor":"中金+德银","loc":"北京","sh":"曹旭东16%+上汽9.5%+奔驰6.4%","gain":"+25~45%","dec":"重仓·甲尾","note":"物理AI第一股·GIC+富达+BlackRock+奔驰+比亚迪基石","pubLots":99692,"interest":3,"mech":"B机制","margin":"","jiaTiers":[10,30,60,100,200,300,500,600,800],"yiTiers":[500,600,700,800,1000,1200,1500,2000],"allLots":[{"lots":1,"amt":5972},{"lots":2,"amt":11943},{"lots":3,"amt":17915},{"lots":4,"amt":23886},{"lots":5,"amt":29858},{"lots":6,"amt":35830},{"lots":7,"amt":41801},{"lots":8,"amt":47773},{"lots":9,"amt":53745},{"lots":10,"amt":59716},{"lots":15,"amt":89574},{"lots":20,"amt":119432},{"lots":25,"amt":149291},{"lots":30,"amt":179149},{"lots":35,"amt":209007},{"lots":40,"amt":238865},{"lots":45,"amt":268723},{"lots":50,"amt":298581},{"lots":100,"amt":597162},{"lots":150,"amt":895743},{"lots":200,"amt":1194325},{"lots":250,"amt":1492906},{"lots":300,"amt":1791487},{"lots":350,"amt":2090068},{"lots":400,"amt":2388649},{"lots":450,"amt":2687230},{"lots":500,"amt":2985811},{"lots":1000,"amt":5971623},{"lots":1500,"amt":8957434},{"lots":2000,"amt":11943245}]},{"code":"07687","name":"易控智驾","type":"inst","price":"81.16-87.92","lot":50,"fee":4440,"subStart":"2026-06-29","subEnd":"2026-07-03","listDate":"2026-07-08","cornerstone":"11家/50%","cs":6,"hot":"🔥极高","hs":5,"mcap":"~178亿","gs":true,"sponsor":"海通国际+中信里昂","loc":"福建上杭","sh":"蓝水生33%+紫金4.1%+宁德4.5%","gain":"+30~55%","dec":"重仓·乙头","note":"紫金基石加投+宁德D轮突击·迁址紫金总部","pubLots":52264,"interest":3,"mech":"B机制","margin":"","jiaTiers":[20,40,90,180,200,400,600,800,1000],"yiTiers":[500,600,700,800,1000,1200,1500,2000],"allLots":[{"lots":1,"amt":4440},{"lots":2,"amt":8881},{"lots":3,"amt":13321},{"lots":4,"amt":17761},{"lots":5,"amt":22202},{"lots":6,"amt":26642},{"lots":7,"amt":31082},{"lots":8,"amt":35523},{"lots":9,"amt":39963},{"lots":10,"amt":44403},{"lots":12,"amt":53284},{"lots":14,"amt":62165},{"lots":16,"amt":71045},{"lots":18,"amt":79926},{"lots":20,"amt":88807},{"lots":30,"amt":133210},{"lots":40,"amt":177613},{"lots":50,"amt":222017},{"lots":60,"amt":266420},{"lots":70,"amt":310823},{"lots":80,"amt":355227},{"lots":90,"amt":399630},{"lots":100,"amt":444033},{"lots":120,"amt":532840},{"lots":140,"amt":621647},{"lots":160,"amt":710453},{"lots":180,"amt":799260},{"lots":200,"amt":888067},{"lots":400,"amt":1776133},{"lots":600,"amt":2664200},{"lots":800,"amt":3552267},{"lots":1000,"amt":4440334},{"lots":2000,"amt":8880667}]},{"code":"07656","name":"瑞为技术","type":"zhuang","zs":79,"price":"21.66","lot":200,"fee":4376,"subStart":"2026-06-29","subEnd":"2026-07-03","listDate":"2026-07-08","cornerstone":"无","cs":1,"hot":"🟡高","hs":4,"mcap":"~66亿","gs":false,"sponsor":"华泰+建银+农银","loc":"厦门","sh":"詹东晖28%+英特尔4.6%","gain":"-15~+100%+","dec":"妖股博弈","note":"🦄最强妖股·三无+18C·创始人婚变·暗盘必走","pubLots":7022,"interest":3,"mech":"18C","margin":"","jiaTiers":[20,45,90,150,250,450,600,900,1000],"yiTiers":[500,600,700,800,1000,1200,1500,2000],"allLots":[{"lots":1,"amt":4376},{"lots":2,"amt":8751},{"lots":3,"amt":13127},{"lots":4,"amt":17503},{"lots":5,"amt":21878},{"lots":6,"amt":26254},{"lots":7,"amt":30630},{"lots":8,"amt":35006},{"lots":9,"amt":39381},{"lots":10,"amt":43757},{"lots":15,"amt":65635},{"lots":20,"amt":87514},{"lots":25,"amt":109392},{"lots":30,"amt":131271},{"lots":35,"amt":153149},{"lots":40,"amt":175028},{"lots":45,"amt":196906},{"lots":50,"amt":218784},{"lots":100,"amt":437569},{"lots":150,"amt":656353},{"lots":200,"amt":875138},{"lots":250,"amt":1093922},{"lots":300,"amt":1312706},{"lots":350,"amt":1531491},{"lots":400,"amt":1750275},{"lots":450,"amt":1969060},{"lots":500,"amt":2187844}]},{"code":"09971","name":"基本半导体","type":"zhuang","zs":75,"price":"27.49-31.62","lot":200,"fee":6388,"subStart":"2026-06-29","subEnd":"2026-07-03","listDate":"2026-07-08","cornerstone":"无","cs":1,"hot":"🔥极高","hs":5,"mcap":"~59亿","gs":false,"sponsor":"国金+中银","loc":"深圳","sh":"汪之涵46%+闻泰3.7%","gain":"-15~+100%+","dec":"赛道博弈","note":"SiC极热·中信退出保荐·创始人减持·对赌","pubLots":6847,"interest":3,"mech":"18C","margin":"","jiaTiers":[15,30,50,100,150,300,450,600,700],"yiTiers":[500,600,700,800,1000,1200,1500,2000],"allLots":[{"lots":1,"amt":6388},{"lots":2,"amt":12776},{"lots":3,"amt":19163},{"lots":4,"amt":25551},{"lots":5,"amt":31939},{"lots":6,"amt":38327},{"lots":7,"amt":44714},{"lots":8,"amt":51102},{"lots":9,"amt":57490},{"lots":10,"amt":63878},{"lots":15,"amt":95817},{"lots":20,"amt":127756},{"lots":25,"amt":159694},{"lots":30,"amt":191633},{"lots":35,"amt":223572},{"lots":40,"amt":255511},{"lots":45,"amt":287450},{"lots":50,"amt":319389},{"lots":100,"amt":638778},{"lots":150,"amt":958167},{"lots":200,"amt":1277556},{"lots":250,"amt":1596944},{"lots":300,"amt":1916333}]},{"code":"01770","name":"东方科脉","type":"zhuang","zs":50,"price":"78.64-101.11","lot":50,"fee":5107,"subStart":"2026-06-29","subEnd":"2026-07-03","listDate":"2026-07-08","cornerstone":"无","cs":1,"hot":"🟢中","hs":2,"mcap":"~46亿","gs":false,"sponsor":"中信(独保)","loc":"嘉兴","sh":"周爱军37%","gain":"+5~20%","dec":"放弃","note":"中信独保=暗盘即巅峰·赛道不热","pubLots":10238,"interest":3,"mech":"B机制","margin":"","jiaTiers":[18,30,70,140,200,400,600,800],"yiTiers":[500,600,700,800,1000,1200,1500,2000],"allLots":[{"lots":1,"amt":5107},{"lots":2,"amt":10213},{"lots":3,"amt":15319},{"lots":4,"amt":20426},{"lots":5,"amt":25532},{"lots":6,"amt":30639},{"lots":7,"amt":35745},{"lots":8,"amt":40852},{"lots":9,"amt":45958},{"lots":10,"amt":51065},{"lots":12,"amt":61278},{"lots":14,"amt":71491},{"lots":16,"amt":81704},{"lots":18,"amt":91917},{"lots":20,"amt":102130},{"lots":30,"amt":153195},{"lots":40,"amt":204259},{"lots":50,"amt":255324},{"lots":60,"amt":306389},{"lots":70,"amt":357454},{"lots":80,"amt":408519},{"lots":90,"amt":459584},{"lots":100,"amt":510648},{"lots":120,"amt":612778},{"lots":140,"amt":714908},{"lots":160,"amt":817038},{"lots":180,"amt":919167},{"lots":200,"amt":1021297}]},{"code":"08090","name":"宝盖新材","type":"cold","price":"6.15-8.51","lot":500,"fee":4298,"subStart":"2026-06-29","subEnd":"2026-07-03","listDate":"2026-07-08","cornerstone":"无","cs":1,"hot":"⚪冷","hs":0,"mcap":"~5亿","gs":false,"sponsor":"中泰国际","loc":"淄博","sh":"刘振韬夫妻97%","gain":"-30~+10%","dec":"放弃","note":"GEM·沟盖板·夫妻店·三死穴","pubLots":14470,"interest":3,"mech":"GEM","margin":"","jiaTiers":[20,40,90,100,200,400,600,900,1000],"yiTiers":[500,600,700,800,1000,1200,1500,2000],"allLots":[{"lots":1,"amt":4298},{"lots":2,"amt":8596},{"lots":3,"amt":12894},{"lots":4,"amt":17192},{"lots":5,"amt":21490},{"lots":6,"amt":25787},{"lots":7,"amt":30085},{"lots":8,"amt":34383},{"lots":9,"amt":38681},{"lots":10,"amt":42979},{"lots":12,"amt":51575},{"lots":14,"amt":60171},{"lots":16,"amt":68767},{"lots":18,"amt":77362},{"lots":20,"amt":85958},{"lots":30,"amt":128937},{"lots":40,"amt":171916},{"lots":50,"amt":214896},{"lots":60,"amt":257875},{"lots":70,"amt":300854},{"lots":80,"amt":343833},{"lots":90,"amt":386812},{"lots":100,"amt":429791}]},{"code":"00537","name":"普源精电","type":"ah","ahCode":"688337","price":"≤45.98","lot":100,"fee":4644,"subStart":"2026-06-30","subEnd":"2026-07-06","listDate":"2026-07-09","cornerstone":"7家(高瓴HHLR+CPE)","cs":4,"hot":"🟡中高","hs":3,"mcap":"A股待查","gs":true,"sponsor":"中信","loc":"苏州","sh":"高瓴+阳光电源","gain":"+5~20%","dec":"适度·小甲","note":"A+H电子测量仪器龙头·高瓴基石·全球第8","pubLots":24802,"interest":4,"mech":"B机制","margin":"","jiaTiers":[20,40,80,100,200,400,600,800,1000],"yiTiers":[500,600,700,800,1000,1200,1500,2000],"allLots":[{"lots":1,"amt":4644},{"lots":2,"amt":9289},{"lots":3,"amt":13933},{"lots":4,"amt":18577},{"lots":5,"amt":23222},{"lots":6,"amt":27866},{"lots":7,"amt":32511},{"lots":8,"amt":37155},{"lots":9,"amt":41799},{"lots":10,"amt":46444},{"lots":15,"amt":69666},{"lots":20,"amt":92887},{"lots":25,"amt":116109},{"lots":30,"amt":139331},{"lots":35,"amt":162553},{"lots":40,"amt":185775},{"lots":45,"amt":208997},{"lots":50,"amt":232219},{"lots":60,"amt":278662},{"lots":70,"amt":325106},{"lots":80,"amt":371550},{"lots":90,"amt":417993},{"lots":100,"amt":464437},{"lots":200,"amt":928874},{"lots":300,"amt":1393311},{"lots":400,"amt":1857748},{"lots":500,"amt":2322185}]},{"code":"01377","name":"鼎泰高科","type":"ah","ahCode":"301377","ahPrice":"¥553.80","ahDisc":"-36%","price":"380.00","lot":100,"fee":38383,"subStart":"2026-06-30","subEnd":"2026-07-06","listDate":"2026-07-09","cornerstone":"17家/43%","cs":3,"hot":"🟢中","hs":2,"mcap":"~2,278亿(A)","gs":true,"sponsor":"中信+汇丰","loc":"东莞","sh":"东莞女首富","gain":"-5~+15%","dec":"一手摸奖","note":"入场费3.8万极贵·A股5日跌16%·中信暗盘跑","pubLots":12632,"interest":4,"mech":"B机制","margin":"","jiaTiers":[2,5,10,20,30,52,78,100,109],"yiTiers":[500,600,700,800,1000,1200,1500,2000],"allLots":[{"lots":1,"amt":38383},{"lots":2,"amt":76766},{"lots":3,"amt":115150},{"lots":4,"amt":153533},{"lots":5,"amt":191916},{"lots":6,"amt":230299},{"lots":7,"amt":268683},{"lots":8,"amt":307066},{"lots":9,"amt":345449},{"lots":10,"amt":383832},{"lots":15,"amt":575748},{"lots":20,"amt":767665},{"lots":25,"amt":959581},{"lots":30,"amt":1151497},{"lots":35,"amt":1343413},{"lots":40,"amt":1535329},{"lots":45,"amt":1727245},{"lots":50,"amt":1919162},{"lots":60,"amt":2302994},{"lots":70,"amt":2686826},{"lots":80,"amt":3070658},{"lots":90,"amt":3454491},{"lots":100,"amt":3838323}]},{"code":"02475","name":"立讯精密","type":"ah","ahCode":"002475","price":"≤63.28","lot":100,"fee":6392,"subStart":"2026-06-30","subEnd":"2026-07-06","listDate":"2026-07-09","cornerstone":"34家(淡马锡+GIC+高瓴)","cs":6,"hot":"🔥极高","hs":5,"mcap":"募240亿HKD","gs":true,"sponsor":"中信+高盛+中金","loc":"深圳","sh":"淡马锡+GIC+ADIA+高瓴+腾讯+富达","gain":"+10~30%","dec":"重仓·甲尾","note":"超级IPO·34家基石全明星·精密制造龙头","pubLots":383000,"interest":4,"mech":"B机制","margin":"","jiaTiers":[10,30,60,100,300,400,600,700],"yiTiers":[500,600,700,800,1000,1200,1500,2000],"allLots":[{"lots":1,"amt":6392},{"lots":2,"amt":12784},{"lots":3,"amt":19175},{"lots":4,"amt":25567},{"lots":5,"amt":31959},{"lots":6,"amt":38351},{"lots":7,"amt":44743},{"lots":8,"amt":51135},{"lots":9,"amt":57526},{"lots":10,"amt":63918},{"lots":15,"amt":95877},{"lots":20,"amt":127836},{"lots":25,"amt":159795},{"lots":30,"amt":191755},{"lots":35,"amt":223714},{"lots":40,"amt":255673},{"lots":45,"amt":287632},{"lots":50,"amt":319591},{"lots":60,"amt":383509},{"lots":70,"amt":447427},{"lots":80,"amt":511345},{"lots":90,"amt":575264},{"lots":100,"amt":639182}]},{"code":"06951","name":"三环集团","type":"ah","ahCode":"300408","price":"≤100.30","lot":100,"fee":10131,"subStart":"2026-06-30","subEnd":"2026-07-06","listDate":"2026-07-09","cornerstone":"17家/50%(淡马锡+阿里+腾讯)","cs":6,"hot":"🔥极高","hs":5,"mcap":"~2,703亿(A)","gs":true,"sponsor":"中国银河国际","loc":"潮州","sh":"张万镇(潮州首富)","gain":"+10~25%","dec":"重仓·甲尾","note":"MLCC龙头·淡马锡+阿里+腾讯基石·供货比亚迪/特斯拉/英伟达","pubLots":71364,"interest":4,"mech":"B机制","margin":"","jiaTiers":[9,15,35,70,100,200,300,400],"yiTiers":[500,600,700,800,1000,1200,1500,2000],"allLots":[{"lots":1,"amt":10131},{"lots":2,"amt":20262},{"lots":3,"amt":30393},{"lots":4,"amt":40525},{"lots":5,"amt":50656},{"lots":6,"amt":60787},{"lots":7,"amt":70918},{"lots":8,"amt":81049},{"lots":9,"amt":91180},{"lots":10,"amt":101312},{"lots":15,"amt":151967},{"lots":20,"amt":202623},{"lots":25,"amt":253279},{"lots":30,"amt":303935},{"lots":35,"amt":354590},{"lots":40,"amt":405246},{"lots":45,"amt":455902},{"lots":50,"amt":506558}]},{"code":"02797","name":"齐云山食品","type":"cold","price":"5.00-8.00","lot":500,"fee":4040,"subStart":"2026-06-30","subEnd":"2026-07-06","listDate":"2026-07-09","cornerstone":"无","cs":1,"hot":"⚪冷","hs":1,"mcap":"微盘","gs":false,"sponsor":"中泰国际","loc":"江西","sh":"创始人控股","gain":"-10~+10%","dec":"放弃","note":"南酸枣糕·无基石·2025营收利润双降","pubLots":25000,"interest":4,"mech":"B机制","margin":"","jiaTiers":[20,40,90,100,200,400,700,900,1000],"yiTiers":[500,600,700,800,1000,1200,1500,2000],"allLots":[{"lots":1,"amt":4040},{"lots":2,"amt":8081},{"lots":3,"amt":12121},{"lots":4,"amt":16161},{"lots":5,"amt":20202},{"lots":6,"amt":24242},{"lots":7,"amt":28282},{"lots":8,"amt":32323},{"lots":9,"amt":36363},{"lots":10,"amt":40403},{"lots":15,"amt":60605},{"lots":20,"amt":80807},{"lots":25,"amt":101009},{"lots":30,"amt":121210},{"lots":35,"amt":141412},{"lots":40,"amt":161614},{"lots":45,"amt":181815},{"lots":50,"amt":202017}]},{"code":"03752","name":"珞石机器人","type":"inst","price":"38.00","lot":100,"fee":3838,"subStart":"2026-06-30","subEnd":"2026-07-06","listDate":"2026-07-09","cornerstone":"5家/31%","cs":3,"hot":"🟡中高","hs":3,"mcap":"待确认","gs":true,"sponsor":"中金+国泰君安","loc":"北京","sh":"庹华39%+国家制造业基金9.7%","gain":"+10~30%","dec":"适度·小甲","note":"柔性协作机器人第一·具身智能·资金可复用","pubLots":23032,"interest":4,"mech":"B机制","margin":"","jiaTiers":[20,50,100,200,300,500,700,1000],"yiTiers":[500,600,700,800,1000,1200,1500,2000],"allLots":[{"lots":1,"amt":3838},{"lots":2,"amt":7677},{"lots":3,"amt":11515},{"lots":4,"amt":15353},{"lots":5,"amt":19192},{"lots":6,"amt":23030},{"lots":7,"amt":26868},{"lots":8,"amt":30707},{"lots":9,"amt":34545},{"lots":10,"amt":38383},{"lots":15,"amt":57575},{"lots":20,"amt":76766},{"lots":25,"amt":95958},{"lots":30,"amt":115150},{"lots":35,"amt":134341},{"lots":40,"amt":153533},{"lots":45,"amt":172725},{"lots":50,"amt":191916},{"lots":60,"amt":230299},{"lots":70,"amt":268683},{"lots":80,"amt":307066},{"lots":90,"amt":345449},{"lots":100,"amt":383832}]},{"code":"02249","name":"晶合集成","type":"ah","ahCode":"688249","ahPrice":"¥59.26","ahDisc":"-51%","price":"30.00-32.30","lot":100,"fee":3263,"subStart":"2026-06-30","subEnd":"2026-07-07","listDate":"2026-07-10","cornerstone":"20家/52%","cs":4,"hot":"🟡热","hs":3,"mcap":"~1,190亿(A)","gs":true,"sponsor":"中金","loc":"合肥","sh":"合肥国资","gain":"+5~20%","dec":"适度·小甲","note":"A+H·H折让51%·半导体晶圆代工·A股强势","pubLots":108000,"interest":5,"mech":"B机制","margin":"","jiaTiers":[30,60,100,200,300,600,900,1000],"yiTiers":[500,600,700,800,1000,1200,1500,2000],"allLots":[{"lots":1,"amt":3263},{"lots":2,"amt":6525},{"lots":3,"amt":9788},{"lots":4,"amt":13050},{"lots":5,"amt":16313},{"lots":6,"amt":19575},{"lots":7,"amt":22838},{"lots":8,"amt":26101},{"lots":9,"amt":29363},{"lots":10,"amt":32626},{"lots":20,"amt":65251},{"lots":30,"amt":97877},{"lots":40,"amt":130503},{"lots":50,"amt":163129},{"lots":60,"amt":195754},{"lots":70,"amt":228380},{"lots":80,"amt":261006},{"lots":90,"amt":293632},{"lots":100,"amt":326257},{"lots":200,"amt":652515},{"lots":300,"amt":978772},{"lots":400,"amt":1305030},{"lots":500,"amt":1631287}]},{"code":"06745","name":"滨化股份","type":"ah","ahCode":"601678","ahPrice":"¥6.47","ahDisc":"-52%","price":"3.05-3.59","lot":1000,"fee":3626,"subStart":"2026-06-30","subEnd":"2026-07-07","listDate":"2026-07-10","cornerstone":"7家/35%","cs":2,"hot":"⚪低","hs":1,"mcap":"~133亿(A)","gs":true,"sponsor":"华泰+建银","loc":"滨州","sh":"滨化集团","gain":"-5~+10%","dec":"一手/放弃","note":"A+H·H折让52%但化工赛道冷","pubLots":35200,"interest":5,"mech":"B机制","margin":"","jiaTiers":[20,50,100,200,300,500,800,1000],"yiTiers":[500,600,700,800,1000,1200,1500,2000],"allLots":[{"lots":1,"amt":3626},{"lots":2,"amt":7252},{"lots":3,"amt":10879},{"lots":4,"amt":14505},{"lots":5,"amt":18131},{"lots":6,"amt":21757},{"lots":7,"amt":25383},{"lots":8,"amt":29010},{"lots":9,"amt":32636},{"lots":10,"amt":36262},{"lots":15,"amt":54393},{"lots":20,"amt":72524},{"lots":25,"amt":90655},{"lots":30,"amt":108786},{"lots":35,"amt":126917},{"lots":40,"amt":145048},{"lots":45,"amt":163179},{"lots":50,"amt":181310}]},{"code":"02523","name":"永康控股","type":"cold","price":"2.20-2.68","lot":2000,"fee":5414,"subStart":"2026-06-30","subEnd":"2026-07-08","listDate":"2026-07-13","cornerstone":"无","cs":1,"hot":"⚪冷","hs":0,"mcap":"极微","gs":false,"sponsor":"华富建业+同人融资","loc":"新加坡","sh":"Navis+创始人","gain":"-20~+5%","dec":"放弃","note":"集装箱堆场·无基石·冷门","pubLots":25800,"interest":6,"mech":"B机制","margin":"","jiaTiers":[10,30,70,100,200,300,500,700,900],"yiTiers":[500,600,700,800,1000,1200,1500,2000],"allLots":[{"lots":1,"amt":5414},{"lots":2,"amt":10828},{"lots":3,"amt":16242},{"lots":4,"amt":21656},{"lots":5,"amt":27070},{"lots":6,"amt":32484},{"lots":7,"amt":37898},{"lots":8,"amt":43312},{"lots":9,"amt":48727},{"lots":10,"amt":54141},{"lots":15,"amt":81211},{"lots":20,"amt":108281},{"lots":25,"amt":135351},{"lots":30,"amt":162422},{"lots":35,"amt":189492},{"lots":40,"amt":216562},{"lots":45,"amt":243633},{"lots":50,"amt":270703}]}]`);
+
+const COMMISSION = 50;
+const TODAY = '2026-06-30';
+
+// ==================== STATE (persisted via localStorage) ====================
+function loadState(){
+  try{
+    var s = JSON.parse(localStorage.getItem('ipo_calc_state'));
+    return s || {funds:{A:500000,B:500000,C:500000},tiers:{},sel:[],filter:'all'};
+  }catch(e){return {funds:{A:500000,B:500000,C:500000},tiers:{},sel:[],filter:'all'};}
+}
+function saveState(st){ localStorage.setItem('ipo_calc_state', JSON.stringify(st)); }
+
+// ==================== RENDER ====================
+function render(){
+  var st = loadState();
+  var funds = st.funds, tiers = st.tiers, selCodes = st.sel, filter = st.filter;
+
+  // Compute used per account (本金 = (申购金额+佣金)/10)
+  var used = {A:0,B:0,C:0};
+  selCodes.forEach(function(code){
+    ['A','B','C'].forEach(function(acc){
+      var t = tiers[code] && tiers[code][acc];
+      if(t) used[acc] += (t.amt + COMMISSION) / 10;
+    });
+  });
+
+  // Filter stocks
+  var stocks = IPO_DATA.slice();
+  if(filter==='ah') stocks = stocks.filter(function(s){return s.type==='ah';});
+  else if(filter==='inst') stocks = stocks.filter(function(s){return s.type==='inst';});
+  else if(filter==='zhuang') stocks = stocks.filter(function(s){return s.type==='zhuang';});
+  else if(filter==='subbing') stocks = stocks.filter(function(s){return s.subEnd>=TODAY;});
+
+  // Build HTML
+  var html = '';
+
+  // Title
+  html += '<h1>📊 港新股打新计算器</h1>';
+
+  // Fund inputs
+  html += '<div class="card"><h3>💰 账户资金 (10x杠杆，显示为所需本金)</h3>';
+  html += '<div class="fund-row">';
+  ['A','B','C'].forEach(function(acc){
+    html += '<div class="fund-item"><label>账户'+acc+' (HKD)</label>';
+    html += '<input type="number" id="fund'+acc+'" value="'+funds[acc]+'" onchange="onFundChange(\''+acc+'\',this.value)" placeholder="500000">';
+    html += '</div>';
+  });
+  html += '</div></div>';
+
+  // Conflict bar
+  var conflict = buildConflict();
+  if(conflict) html += '<div class="conflict-bar">'+conflict+'</div>';
+
+  // Filter bar
+  html += '<div class="filter-bar">';
+  var filters = [
+    {k:'all',l:'全部'},{k:'ah',l:'🔷 A+H'},{k:'inst',l:'⭐ 机构'},{k:'zhuang',l:'🦄 庄票'},{k:'subbing',l:'🟢 招股中'}
+  ];
+  filters.forEach(function(f){
+    html += '<button class="filter-btn'+(filter===f.k?' active':'')+'" onclick="onFilter(\''+f.k+'\')">'+f.l+'</button>';
+  });
+  html += '</div>';
+
+  // Stock list
+  stocks.forEach(function(s){
+    var sel = selCodes.indexOf(s.code)>=0;
+    var stockTier = tiers[s.code] || {};
+
+    // Remaining funds for this stock (remaining = total - used + current_stock_already_used)
+    var curUsed = {A:0,B:0,C:0};
+    ['A','B','C'].forEach(function(acc){
+      var t = stockTier[acc];
+      if(t) curUsed[acc] = (t.amt + COMMISSION) / 10;
+    });
+    var remA = (funds.A - used.A + curUsed.A)/1e4;
+    var remB = (funds.B - used.B + curUsed.B)/1e4;
+    var remC = (funds.C - used.C + curUsed.C)/1e4;
+
+    // Type icon
+    var typeIcon = s.type==='ah'?'🔷':s.type==='inst'?'⭐':s.type==='zhuang'?'🦄':'';
+
+    html += '<div class="stock-card'+(sel?' sel':'')+'">';
+    // Header
+    html += '<div class="stock-hdr" onclick="toggleStock(\''+s.code+'\')">';
+    html += '<div class="chk'+(sel?' on':'')+'">'+(sel?'✓':'')+'</div>';
+    html += '<div class="stock-info">';
+    html += '<div class="n">'+typeIcon+' '+s.name+' <code>'+s.code+'</code></div>';
+    html += '<div class="m"><span style="background:rgba(88,166,255,.15);color:var(--accent);padding:1px 6px;border-radius:4px;font-size:.7em">'+(s.mech||'—')+'</span> · '+s.lot+'股/手 · '+s.fee.toLocaleString()+' HKD · <span class="deadline">⏰ '+s.subEnd+'</span></div>';
+    html += '</div>';
+    html += '<span class="detail" onclick="event.stopPropagation();showDetail(\''+s.code+'\')">ℹ️</span>';
+    html += '<span class="arrow">'+(sel?'▼':'▶')+'</span>';
+    html += '</div>';
+
+    // Tags
+    html += '<div class="stock-tags">';
+    html += '<span class="tag">'+(s.cornerstone||'无基石')+'</span>';
+    html += '<span class="tag">'+(s.hot||'')+'</span>';
+    html += '<span class="tag tag-dec">'+(s.dec||'')+'</span>';
+    if(s.note) html += '<span class="tag tag-note" title="'+s.note+'">'+s.note+'</span>';
+    html += '</div>';
+
+    // Tier table (expanded)
+    if(sel && s.allLots && s.allLots.length){
+      html += '<div class="tier-wrap"><div class="tier-table">';
+      // Header
+      html += '<div class="tier-row tier-hdr">';
+      html += '<div class="tier-cell lots">手数</div>';
+      html += '<div class="tier-cell amt">申购金额</div>';
+      html += '<div class="tier-cell cash">需本金</div>';
+      ['A','B','C'].forEach(function(acc){
+        html += '<div class="tier-cell pick">'+acc+'<span class="remain">余'+((acc==='A'?remA:acc==='B'?remB:remC).toFixed(0))+'万</span></div>';
+      });
+      html += '</div>';
+      // Rows
+      s.allLots.forEach(function(lot){
+        var cash = (lot.amt + COMMISSION) / 10;
+        var cashWan = cash/1e4;
+        var picks = {};
+        ['A','B','C'].forEach(function(acc){
+          picks[acc] = !!(stockTier[acc] && stockTier[acc].lots === lot.lots);
+        });
+        var overs = {};
+        ['A','B','C'].forEach(function(acc){
+          var accRem = acc==='A'?remA:acc==='B'?remB:remC;
+          overs[acc] = cashWan > accRem && !picks[acc];
+        });
+        html += '<div class="tier-row">';
+        html += '<div class="tier-cell lots">'+lot.lots.toLocaleString()+'</div>';
+        html += '<div class="tier-cell amt">'+(lot.amt/1e4).toFixed(0)+'万</div>';
+        html += '<div class="tier-cell cash">'+cashWan.toFixed(1)+'万</div>';
+        ['A','B','C'].forEach(function(acc){
+          var cls = 'pick-btn';
+          if(picks[acc]) cls += ' done';
+          if(overs[acc]) cls += ' over';
+          var txt = picks[acc] ? '✓' : (overs[acc] ? '超' : '选');
+          html += '<div class="tier-cell pick"><button class="'+cls+'" onclick="event.stopPropagation();pickTier(\''+s.code+'\',\''+acc+'\','+lot.lots+','+lot.amt+')"'+((overs[acc]&&!picks[acc])?' disabled':'')+'>'+txt+'</button></div>';
+        });
+        html += '</div>';
+      });
+      html += '</div></div>';
+    }
+
+    html += '</div>'; // stock-card
+  });
+
+  if(!stocks.length) html += '<div class="empty">没有匹配的股票</div>';
+
+  // Reset
+  html += '<div class="reset-bar"><button class="reset-btn" onclick="resetAll()">🔄 清除全部选择</button></div>';
+
+  document.getElementById('app').innerHTML = html;
+
+  // Bottom bar
+  renderBottom(used, funds);
+}
+
+function renderBottom(used, funds){
+  var ta = used.A/1e4, tb = used.B/1e4, tc = used.C/1e4;
+  var overA = used.A > funds.A, overB = used.B > funds.B, overC = used.C > funds.C;
+  var anyOver = overA || overB || overC;
+
+  // Create or update bottom bar
+  var bar = document.getElementById('bottomBar');
+  if(!bar){
+    bar = document.createElement('div');
+    bar.id = 'bottomBar';
+    bar.className = 'bottom-bar';
+    document.body.appendChild(bar);
+  }
+  var html = '<div class="totals">';
+  ['A','B','C'].forEach(function(acc){
+    var over = acc==='A'?overA:acc==='B'?overB:overC;
+    var val = acc==='A'?ta:acc==='B'?tb:tc;
+    html += '<div class="t'+(over?' over':'')+'">';
+    html += '<div class="v">'+acc+' '+val.toFixed(1)+'万</div>';
+    html += '<div class="l">本金'+(funds[acc]/1e4).toFixed(0)+'万</div>';
+    html += '</div>';
+  });
+  html += '</div>';
+  if(anyOver) html += '<div class="warn">⚠️ 超出本金上限</div>';
+  bar.innerHTML = html;
+}
+
+// ==================== ACTIONS ====================
+function onFundChange(acc, val){
+  var st = loadState();
+  st.funds[acc] = parseFloat(val) || 0;
+  saveState(st);
+  render();
+}
+
+function onFilter(k){
+  var st = loadState();
+  st.filter = k;
+  saveState(st);
+  render();
+}
+
+function toggleStock(code){
+  var st = loadState();
+  var idx = st.sel.indexOf(code);
+  if(idx>=0){ st.sel.splice(idx,1); delete st.tiers[code]; }
+  else st.sel.push(code);
+  saveState(st);
+  render();
+}
+
+function pickTier(code, acc, lots, amt){
+  var st = loadState();
+  if(!st.tiers[code]) st.tiers[code] = {};
+  var cur = st.tiers[code][acc];
+  if(cur && cur.lots === lots){ delete st.tiers[code][acc]; }
+  else { st.tiers[code][acc] = {lots:lots, amt:amt}; }
+  if(st.sel.indexOf(code)<0) st.sel.push(code);
+  saveState(st);
+  render();
+}
+
+function showDetail(code){
+  var s = IPO_DATA.find(function(x){return x.code===code;});
+  if(!s) return;
+  var html = '<div class="modal-overlay" onclick="closeModal()"><div class="modal" onclick="event.stopPropagation()">';
+  html += '<button class="close" onclick="closeModal()">✕</button>';
+  html += '<h3>'+s.name+' <code style="color:var(--muted)">'+s.code+'</code></h3>';
+  var rows = [
+    ['招股期', s.subStart+' → '+s.subEnd+' · 上市 '+s.listDate],
+    ['定价', (s.price||'')+' · '+s.lot+'股/手 · 入场费 '+(s.fee||'').toLocaleString()],
+    ['基石', s.cornerstone||'无'],
+    ['保荐人', s.sponsor||'—'],
+    ['机制', (s.mech||'—')+' · 公开手数 '+(s.pubLots||'—')+' · 计息 '+(s.interest||'?')+'日'],
+    ['市值', s.mcap||'—'],
+    ['预期涨幅', s.gain||'—'],
+    ['建议', s.dec||'—']
+  ];
+  if(s.note) rows.push(['备注', s.note]);
+  if(s.ahDisc) rows.push(['A/H折价', (s.ahPrice||'')+' · H折让 '+(s.ahDisc||'')]);
+  rows.forEach(function(r){
+    html += '<div class="row"><span class="dl">'+r[0]+'</span><span class="dv">'+r[1]+'</span></div>';
+  });
+  html += '</div></div>';
+  document.getElementById('modalCtn').innerHTML = html;
+}
+
+function closeModal(){ document.getElementById('modalCtn').innerHTML = ''; }
+
+function resetAll(){
+  if(confirm('确定清除全部选择？')){ localStorage.removeItem('ipo_calc_state'); render(); }
+}
+
+// ==================== CONFLICT ====================
+function buildConflict(){
+  var active = IPO_DATA.filter(function(s){return s.subEnd>=TODAY;});
+  var byEnd = {};
+  active.forEach(function(s){
+    if(!byEnd[s.subEnd]) byEnd[s.subEnd]=[];
+    byEnd[s.subEnd].push(s);
+  });
+  var dates = Object.keys(byEnd).sort();
+  if(dates.length<=1) return '';
+
+  var cur = {dates:[dates[0]],stocks:byEnd[dates[0]].slice()};
+  var groups = [];
+  for(var i=1;i<dates.length;i++){
+    var d = dates[i];
+    var lastD = cur.dates[cur.dates.length-1];
+    if((new Date(d)-new Date(lastD))/864e5 <= 2){
+      cur.dates.push(d);
+      cur.stocks = cur.stocks.concat(byEnd[d]);
+    } else {
+      if(cur.stocks.length>=2) groups.push(cur);
+      cur = {dates:[d],stocks:byEnd[d].slice()};
+    }
+  }
+  if(cur.stocks.length>=2) groups.push(cur);
+  if(!groups.length) return '';
+
+  var g = groups[0];
+  var ds = g.dates.map(function(d){return d.slice(5);}).join('和');
+  var lastEnd = new Date(g.dates[g.dates.length-1]);
+  var release = new Date(lastEnd.getTime()+864e5).toISOString().slice(5,10);
+  var nextBatch = dates.find(function(d){return new Date(d)-lastEnd>=864e5*2;});
+  var extra = nextBatch ? ' · '+release+'解冻后可复用'+nextBatch.slice(5)+'截止批次' : '';
+  return '⚠️ '+g.stocks.length+'只新股·截止日相邻('+ds+')·资金冲突'+extra;
+}
+
+// ==================== INIT ====================
+render();
+</script>
+</body>
+</html>
