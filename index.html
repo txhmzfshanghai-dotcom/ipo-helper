@@ -3,396 +3,2549 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-<title>港新股打新计算器</title>
+<title>港新股日历</title>
 <style>
 :root{--red:#e74c3c;--green:#27ae60;--orange:#f39c12;--bg:#0d1117;--card:#161b22;--border:#30363d;--text:#c9d1d9;--muted:#8b949e;--accent:#58a6ff;--gold:#f0c040}
 *{margin:0;padding:0;box-sizing:border-box}
-body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI','PingFang HK','Microsoft YaHei',sans-serif;background:var(--bg);color:var(--text);line-height:1.5;min-height:100vh;padding-bottom:160px}
-.app{max-width:800px;margin:0 auto;padding:12px}
-h1{font-size:1.15em;color:#fff;text-align:center;margin:8px 0 16px}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI','PingFang HK','Microsoft YaHei',sans-serif;background:var(--bg);color:var(--text);line-height:1.5;min-height:100vh;padding-bottom:70px}
+.app{max-width:900px;margin:0 auto;padding:12px}
 
-/* Card */
-.card{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:14px;margin-bottom:10px}
-.card h3{color:#fff;font-size:.9em;margin-bottom:10px}
+/* Header */
+.header{display:flex;justify-content:space-between;align-items:center;padding:8px 0;margin-bottom:8px}
+.header h1{font-size:1.2em;color:#fff}
+.header .update{color:var(--muted);font-size:0.7em}
 
-/* Fund inputs */
-.fund-row{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:8px}
-.fund-item label{display:block;color:var(--muted);font-size:.72em;margin-bottom:3px}
-.fund-item input{width:100%;padding:8px 10px;background:var(--bg);border:1px solid var(--border);border-radius:8px;color:#fff;font-size:.85em}
-.fund-item input:focus{outline:none;border-color:var(--accent)}
+/* Bottom Tab Bar */
+.tab-bar{position:fixed;bottom:0;left:0;right:0;background:var(--card);border-top:1px solid var(--border);display:flex;z-index:50;padding:4px 0 env(safe-area-inset-bottom,4px)}
+.tab-item{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:6px 4px;cursor:pointer;color:var(--muted);font-size:0.68em;gap:2px;transition:all .2s;border:none;background:none}
+.tab-item.active{color:var(--accent)}
+.tab-item .icon{font-size:1.3em}
+.tab-content{display:none}
+.tab-content.active{display:block}
 
-/* Conflict bar */
-.conflict-bar{background:rgba(243,156,18,.1);border:1px solid rgba(243,156,18,.3);border-radius:10px;padding:10px 14px;margin-bottom:10px;font-size:.76em;color:var(--orange)}
+/* Cards */
+.card{background:var(--card);border:1px solid var(--border);border-radius:10px;padding:14px;margin-bottom:10px}
+.card h3{color:#fff;margin-bottom:10px;font-size:0.95em}
+.card-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px}
 
-/* Filter */
-.filter-bar{display:flex;gap:6px;margin-bottom:10px;flex-wrap:wrap}
-.filter-btn{padding:6px 14px;border:1px solid var(--border);border-radius:8px;font-size:.76em;color:var(--muted);cursor:pointer;background:none;transition:all .15s}
-.filter-btn.active{border-color:var(--accent);color:var(--accent);background:rgba(88,166,255,.1)}
+/* Stats row */
+.stat-row{display:flex;gap:8px;margin-bottom:12px;flex-wrap:wrap}
+.stat-chip{flex:1;min-width:60px;background:var(--bg);border:1px solid var(--border);border-radius:8px;padding:10px;text-align:center}
+.stat-chip .v{font-size:1.3em;font-weight:700;color:#fff}
+.stat-chip .l{color:var(--muted);font-size:0.7em;margin-top:2px}
+.stat-chip.warn .v{color:var(--orange)}
 
-/* Stock card */
-.stock-card{background:var(--card);border:1px solid var(--border);border-radius:12px;margin-bottom:10px;overflow:hidden}
-.stock-card.sel{border-color:var(--accent)}
-.stock-hdr{display:flex;align-items:center;padding:12px;gap:8px;cursor:pointer}
-.stock-hdr .chk{width:22px;height:22px;border:2px solid var(--border);border-radius:6px;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:.6em;color:#fff}
-.stock-hdr .chk.on{background:var(--accent);border-color:var(--accent)}
-.stock-info{flex:1;min-width:0}
-.stock-info .n{color:#fff;font-weight:600;font-size:.85em}
-.stock-info .n code{color:var(--muted);font-weight:400;font-size:.85em}
-.stock-info .m{color:var(--muted);font-size:.7em;margin-top:2px}
-.stock-info .m .deadline{color:var(--red)}
-.stock-hdr .arrow{color:var(--muted);font-size:.7em;flex-shrink:0}
-.stock-hdr .detail{color:var(--muted);font-size:.9em;padding:2px 8px;flex-shrink:0;cursor:pointer}
-.stock-tags{display:flex;gap:6px;flex-wrap:wrap;padding:0 12px 10px}
-.tag{padding:2px 8px;border-radius:6px;font-size:.65em;color:var(--muted);background:rgba(139,148,158,.1)}
-.tag-dec{color:var(--accent);background:rgba(88,166,255,.1)}
-.tag-note{color:var(--orange);background:rgba(243,156,18,.1);max-width:280px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+/* Tables */
+.tbl{width:100%;border-collapse:collapse;font-size:0.78em}
+.tbl th{background:#21262d;color:#fff;padding:6px 8px;text-align:left;font-weight:600;white-space:nowrap;font-size:0.85em}
+.tbl td{padding:6px 8px;border-bottom:1px solid var(--border)}
+.tbl tr:hover td{background:rgba(88,166,255,0.03)}
+.tbl .num{text-align:right;font-variant-numeric:tabular-nums}
 
-/* Tier table */
-.tier-wrap{border-top:1px solid var(--border);padding:6px 0;overflow-x:auto;-webkit-overflow-scrolling:touch}
-.tier-table{min-width:620px;font-size:.72em}
-.tier-row{display:flex}
-.tier-hdr{background:#21262d}
-.tier-hdr .tier-cell{color:#fff;font-weight:600;padding:8px 6px;font-size:.75em}
-.tier-cell{padding:8px 6px;border-bottom:1px solid rgba(48,54,61,.4)}
-.tier-cell.lots{width:70px;text-align:right}
-.tier-cell.amt{width:95px;text-align:right}
-.tier-cell.cash{width:85px;text-align:right}
-.tier-cell.pick{width:90px;text-align:center}
-.tier-cell .remain{display:block;font-size:.7em;color:var(--muted);font-weight:400}
-.pick-btn{padding:4px 12px;border:1px solid var(--border);border-radius:6px;font-size:.75em;color:var(--muted);cursor:pointer;background:none;transition:all .15s;white-space:nowrap}
-.pick-btn:hover{border-color:var(--accent);color:var(--accent)}
-.pick-btn.done{background:rgba(88,166,255,.2);border-color:var(--accent);color:var(--accent)}
-.pick-btn.over{color:var(--red);border-color:rgba(231,76,60,.4);background:rgba(231,76,60,.1);cursor:not-allowed}
+/* Badges */
+.badge{display:inline-block;padding:1px 6px;border-radius:8px;font-size:0.7em;font-weight:600}
+.b-ah{background:rgba(88,166,255,0.2);color:var(--accent)} .b-inst{background:rgba(240,192,64,0.2);color:var(--gold)}
+.b-zhuang{background:rgba(231,76,60,0.2);color:var(--red)} .b-cold{background:rgba(139,148,158,0.2);color:var(--muted)}
+.b-sub{background:rgba(231,76,60,0.2);color:var(--red)} .b-wait{background:rgba(139,148,158,0.2);color:var(--muted)}
+.b-done{background:rgba(39,174,96,0.2);color:var(--green)} .b-hot{background:rgba(231,76,60,0.2);color:var(--red)}
+.b-mech{background:rgba(88,166,255,0.15);color:var(--accent);font-size:0.65em;padding:0 4px}
+.sold-section{border-left:3px solid var(--green)}
 
-/* Bottom bar */
-.bottom-bar{position:fixed;bottom:0;left:0;right:0;background:var(--card);border-top:2px solid var(--border);padding:14px 16px;z-index:50}
-.bottom-bar .totals{display:flex;gap:8px}
-.bottom-bar .t{flex:1;text-align:center;padding:10px;border-radius:8px;background:rgba(88,166,255,.06)}
-.bottom-bar .t.over{background:rgba(231,76,60,.1)}
-.bottom-bar .t .v{font-size:1.1em;font-weight:700;color:var(--accent)}
-.bottom-bar .t.over .v{color:var(--red)}
-.bottom-bar .t .l{font-size:.68em;color:var(--muted)}
-.bottom-bar .warn{text-align:center;color:var(--red);font-size:.75em;margin-top:8px;font-weight:600}
+/* Buttons & Inputs */
+.btn{padding:7px 14px;border:1px solid var(--border);border-radius:6px;cursor:pointer;background:var(--card);color:var(--text);font-weight:600;font-size:0.82em;transition:all .2s}
+.btn:hover{background:#21262d;border-color:var(--accent)}
+.btn-pri{background:rgba(88,166,255,0.15);border-color:var(--accent);color:var(--accent)}
+.btn-pri:hover{background:rgba(88,166,255,0.25)}
+.btn-danger{background:rgba(231,76,60,0.15);border-color:var(--red);color:var(--red)}
+.btn-sm{padding:4px 8px;font-size:0.72em}
+.btn-block{display:block;width:100%}
+input,select,textarea{padding:8px 10px;border:1px solid var(--border);border-radius:6px;background:var(--bg);color:var(--text);width:100%;font-size:0.85em;font-family:inherit}
+input:focus,select:focus,textarea:focus{outline:none;border-color:var(--accent)}
+.form-group{margin-bottom:10px}
+.form-group label{display:block;color:var(--muted);font-size:0.78em;margin-bottom:3px}
+.form-row{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:8px}
+.flex-row{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+
+/* Monthly Calendar */
+.month-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px}
+.month-header h2{font-size:1.1em;color:#fff}
+.month-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:2px;font-size:0.7em;text-align:center}
+.month-grid .day-hdr{color:var(--muted);padding:4px;font-weight:600}
+.month-grid .day{background:var(--bg);border:1px solid var(--border);border-radius:4px;padding:3px;min-height:50px;cursor:pointer;position:relative}
+.month-grid .day:hover{border-color:var(--accent)}
+.month-grid .day .dn{font-weight:600;margin-bottom:2px}
+.month-grid .day.today{border-color:var(--accent);background:rgba(88,166,255,0.08)}
+.month-grid .day .evt{font-size:0.65em;padding:0 2px;margin:1px 0;border-radius:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.evt-sub{background:rgba(231,76,60,0.2);color:var(--red)} .evt-end{background:rgba(243,156,18,0.2);color:var(--orange)}
+.evt-list{background:rgba(240,192,64,0.2);color:var(--gold)} .evt-dark{background:rgba(139,148,158,0.2);color:var(--muted)}
+
+/* Day detail list */
+.day-list{margin-top:8px}
+.stock-row{display:flex;align-items:center;padding:8px 10px;border-bottom:1px solid var(--border);gap:8px;cursor:pointer;font-size:0.82em}
+.stock-row:hover{background:rgba(88,166,255,0.03)}
+.stock-row .info{flex:1;min-width:0}
+.stock-row .info .name{color:#fff;font-weight:600}
+.stock-row .info .meta{color:var(--muted);font-size:0.78em}
+
+/* Conflict warning */
+.conflict-bar{background:rgba(243,156,18,0.1);border:1px solid rgba(243,156,18,0.3);border-radius:8px;padding:10px 14px;margin-bottom:10px;font-size:0.78em}
+.conflict-bar strong{color:var(--orange)}
+
+/* Calculator */
+.calc-stock{display:flex;align-items:center;padding:8px 10px;border:1px solid var(--border);border-radius:8px;margin-bottom:6px;gap:8px;cursor:pointer;font-size:0.82em;transition:all .2s}
+.calc-stock.selected{border-color:var(--accent);background:rgba(88,166,255,0.06)}
+.calc-stock .cb{width:18px;height:18px;border:2px solid var(--border);border-radius:4px;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:0.7em}
+.calc-stock.selected .cb{background:var(--accent);border-color:var(--accent);color:#fff}
+.calc-stock .priority{width:20px;height:20px;border-radius:50%;background:var(--accent);color:#fff;font-size:0.65em;display:flex;align-items:center;justify-content:center;font-weight:700;flex-shrink:0}
+
+/* Webhook */
+.webhook-row{display:flex;gap:6px;flex-wrap:wrap;margin:8px 0}
+.webhook-chip{padding:6px 14px;border:1px solid var(--border);border-radius:16px;cursor:pointer;font-size:0.78em;color:var(--muted);transition:all .2s}
+.webhook-chip:hover,.webhook-chip.active{border-color:var(--accent);color:var(--accent);background:rgba(88,166,255,0.08)}
+
+/* Toast */
+.toast{position:fixed;top:12px;left:50%;transform:translateX(-50%);padding:10px 20px;border-radius:8px;font-weight:600;z-index:200;font-size:0.85em}
+.toast-success{background:rgba(39,174,96,0.9);color:#fff}
+.toast-error{background:rgba(231,76,60,0.9);color:#fff}
+.toast-info{background:rgba(88,166,255,0.9);color:#fff}
 
 /* Modal */
-.modal-overlay{position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,.7);z-index:100;display:flex;align-items:center;justify-content:center;padding:16px}
-.modal{background:var(--card);border:1px solid var(--border);border-radius:16px;padding:20px;max-width:480px;width:100%;max-height:80vh;overflow-y:auto;position:relative}
-.modal .close{position:absolute;top:10px;right:14px;font-size:1.2em;color:var(--muted);cursor:pointer;background:none;border:none}
-.modal h3{color:#fff;font-size:1em;margin-bottom:12px;padding-right:30px}
-.modal .row{display:flex;padding:8px 0;border-bottom:1px solid rgba(48,54,61,.3);font-size:.78em}
-.modal .row .dl{width:80px;color:var(--muted);flex-shrink:0}
-.modal .row .dv{flex:1;color:var(--text)}
+.modal-overlay{position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.7);display:flex;align-items:center;justify-content:center;z-index:100}
+.modal{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:20px;max-width:700px;width:94%;max-height:85vh;overflow-y:auto}
+.modal h3{color:#fff;margin-bottom:12px}
 
-/* Reset btn */
-.reset-bar{text-align:center;margin-top:8px}
-.reset-btn{padding:6px 16px;background:none;border:1px solid var(--border);border-radius:8px;color:var(--muted);font-size:.7em;cursor:pointer}
+/* Toggle */
+.toggle-wrap{display:flex;gap:2px;background:var(--bg);border-radius:8px;padding:2px}
+.toggle-btn{padding:6px 12px;border:none;border-radius:6px;cursor:pointer;font-size:0.78em;color:var(--muted);background:none}
+.toggle-btn.active{background:var(--accent);color:#fff}
 
-.empty{text-align:center;color:var(--muted);padding:40px 0;font-size:.85em}
+/* Section divider */
+.section-title{color:var(--muted);font-size:0.72em;text-transform:uppercase;letter-spacing:1px;margin:16px 0 8px;padding-left:4px}
 
-@media(max-width:480px){
-  .fund-row{grid-template-columns:1fr 1fr 1fr}
-  .tier-table{min-width:520px;font-size:.68em}
-  .tier-cell{padding:6px 4px}
-  .tier-cell.lots{width:55px}.tier-cell.amt{width:75px}.tier-cell.cash{width:65px}.tier-cell.pick{width:70px}
-  .pick-btn{padding:3px 8px;font-size:.7em}
-}
+@media(min-width:768px){.app{max-width:1000px}.month-grid .day{min-height:65px}.month-grid{font-size:0.82em}.modal{max-width:780px}}
 </style>
 </head>
 <body>
+
 <div class="app" id="app"></div>
-<div id="modalCtn"></div>
+
+<!-- Bottom Tab Bar -->
+<div class="tab-bar">
+  <button class="tab-item active" onclick="switchTab('list')"><span class="icon">📊</span>选股</button>
+  <button class="tab-item" onclick="switchTab('subs')"><span class="icon">📝</span>申购</button>
+  <button class="tab-item" onclick="switchTab('me')"><span class="icon">⚙️</span>我的</button>
+</div>
+
+<div id="toastContainer"></div>
+<div class="modal-overlay" id="modalOverlay" style="display:none" onclick="if(event.target===this)closeModal()"><div class="modal" id="modalContent"></div></div>
 
 <script>
 // ==================== DATA ====================
-const IPO_DATA = JSON.parse(`[{"code":"02667","name":"同仁堂医养","type":"inst","price":"5.48-6.21","lot":500,"fee":3136,"subStart":"2026-06-26","subEnd":"2026-07-02","listDate":"2026-07-07","cornerstone":"3家/47%","cs":4,"hot":"⚪偏低","hs":1,"mcap":"~27亿","gs":true,"sponsor":"中金","loc":"北京","sh":"同仁堂集团84%","gain":"+10~25%","dec":"适度·一手","note":"降价25%重招·Aurora基石削减","pubLots":21631,"interest":1,"mech":"B机制","margin":"18","jiaTiers":[30,70,140,200,400,600,1000,1400,1800],"yiTiers":[500,600,700,800,1000,1200,1500,2000],"allLots":[{"lots":1,"amt":3136},{"lots":2,"amt":6273},{"lots":3,"amt":9409},{"lots":4,"amt":12545},{"lots":5,"amt":15682},{"lots":6,"amt":18818},{"lots":7,"amt":21954},{"lots":8,"amt":25091},{"lots":9,"amt":28227},{"lots":10,"amt":31363},{"lots":12,"amt":37636},{"lots":14,"amt":43908},{"lots":16,"amt":50181},{"lots":18,"amt":56454},{"lots":20,"amt":62726},{"lots":30,"amt":94089},{"lots":40,"amt":125453},{"lots":50,"amt":156816},{"lots":60,"amt":188179},{"lots":70,"amt":219542},{"lots":80,"amt":250905},{"lots":90,"amt":282268},{"lots":100,"amt":313631},{"lots":120,"amt":376358},{"lots":140,"amt":439084},{"lots":160,"amt":501810},{"lots":180,"amt":564537},{"lots":200,"amt":627263},{"lots":400,"amt":1254526},{"lots":600,"amt":1881788},{"lots":800,"amt":2509051},{"lots":1000,"amt":3136314}]},{"code":"06880","name":"MOMENTA-W","type":"inst","price":"295.60","lot":20,"fee":5972,"subStart":"2026-06-29","subEnd":"2026-07-03","listDate":"2026-07-08","cornerstone":"14家/50%","cs":6,"hot":"🔥极高","hs":5,"mcap":"~590亿","gs":true,"sponsor":"中金+德银","loc":"北京","sh":"曹旭东16%+上汽9.5%+奔驰6.4%","gain":"+25~45%","dec":"重仓·甲尾","note":"物理AI第一股·GIC+富达+BlackRock+奔驰+比亚迪基石","pubLots":99692,"interest":3,"mech":"B机制","margin":"","jiaTiers":[10,30,60,100,200,300,500,600,800],"yiTiers":[500,600,700,800,1000,1200,1500,2000],"allLots":[{"lots":1,"amt":5972},{"lots":2,"amt":11943},{"lots":3,"amt":17915},{"lots":4,"amt":23886},{"lots":5,"amt":29858},{"lots":6,"amt":35830},{"lots":7,"amt":41801},{"lots":8,"amt":47773},{"lots":9,"amt":53745},{"lots":10,"amt":59716},{"lots":15,"amt":89574},{"lots":20,"amt":119432},{"lots":25,"amt":149291},{"lots":30,"amt":179149},{"lots":35,"amt":209007},{"lots":40,"amt":238865},{"lots":45,"amt":268723},{"lots":50,"amt":298581},{"lots":100,"amt":597162},{"lots":150,"amt":895743},{"lots":200,"amt":1194325},{"lots":250,"amt":1492906},{"lots":300,"amt":1791487},{"lots":350,"amt":2090068},{"lots":400,"amt":2388649},{"lots":450,"amt":2687230},{"lots":500,"amt":2985811},{"lots":1000,"amt":5971623},{"lots":1500,"amt":8957434},{"lots":2000,"amt":11943245}]},{"code":"07687","name":"易控智驾","type":"inst","price":"81.16-87.92","lot":50,"fee":4440,"subStart":"2026-06-29","subEnd":"2026-07-03","listDate":"2026-07-08","cornerstone":"11家/50%","cs":6,"hot":"🔥极高","hs":5,"mcap":"~178亿","gs":true,"sponsor":"海通国际+中信里昂","loc":"福建上杭","sh":"蓝水生33%+紫金4.1%+宁德4.5%","gain":"+30~55%","dec":"重仓·乙头","note":"紫金基石加投+宁德D轮突击·迁址紫金总部","pubLots":52264,"interest":3,"mech":"B机制","margin":"","jiaTiers":[20,40,90,180,200,400,600,800,1000],"yiTiers":[500,600,700,800,1000,1200,1500,2000],"allLots":[{"lots":1,"amt":4440},{"lots":2,"amt":8881},{"lots":3,"amt":13321},{"lots":4,"amt":17761},{"lots":5,"amt":22202},{"lots":6,"amt":26642},{"lots":7,"amt":31082},{"lots":8,"amt":35523},{"lots":9,"amt":39963},{"lots":10,"amt":44403},{"lots":12,"amt":53284},{"lots":14,"amt":62165},{"lots":16,"amt":71045},{"lots":18,"amt":79926},{"lots":20,"amt":88807},{"lots":30,"amt":133210},{"lots":40,"amt":177613},{"lots":50,"amt":222017},{"lots":60,"amt":266420},{"lots":70,"amt":310823},{"lots":80,"amt":355227},{"lots":90,"amt":399630},{"lots":100,"amt":444033},{"lots":120,"amt":532840},{"lots":140,"amt":621647},{"lots":160,"amt":710453},{"lots":180,"amt":799260},{"lots":200,"amt":888067},{"lots":400,"amt":1776133},{"lots":600,"amt":2664200},{"lots":800,"amt":3552267},{"lots":1000,"amt":4440334},{"lots":2000,"amt":8880667}]},{"code":"07656","name":"瑞为技术","type":"zhuang","zs":79,"price":"21.66","lot":200,"fee":4376,"subStart":"2026-06-29","subEnd":"2026-07-03","listDate":"2026-07-08","cornerstone":"无","cs":1,"hot":"🟡高","hs":4,"mcap":"~66亿","gs":false,"sponsor":"华泰+建银+农银","loc":"厦门","sh":"詹东晖28%+英特尔4.6%","gain":"-15~+100%+","dec":"妖股博弈","note":"🦄最强妖股·三无+18C·创始人婚变·暗盘必走","pubLots":7022,"interest":3,"mech":"18C","margin":"","jiaTiers":[20,45,90,150,250,450,600,900,1000],"yiTiers":[500,600,700,800,1000,1200,1500,2000],"allLots":[{"lots":1,"amt":4376},{"lots":2,"amt":8751},{"lots":3,"amt":13127},{"lots":4,"amt":17503},{"lots":5,"amt":21878},{"lots":6,"amt":26254},{"lots":7,"amt":30630},{"lots":8,"amt":35006},{"lots":9,"amt":39381},{"lots":10,"amt":43757},{"lots":15,"amt":65635},{"lots":20,"amt":87514},{"lots":25,"amt":109392},{"lots":30,"amt":131271},{"lots":35,"amt":153149},{"lots":40,"amt":175028},{"lots":45,"amt":196906},{"lots":50,"amt":218784},{"lots":100,"amt":437569},{"lots":150,"amt":656353},{"lots":200,"amt":875138},{"lots":250,"amt":1093922},{"lots":300,"amt":1312706},{"lots":350,"amt":1531491},{"lots":400,"amt":1750275},{"lots":450,"amt":1969060},{"lots":500,"amt":2187844}]},{"code":"09971","name":"基本半导体","type":"zhuang","zs":75,"price":"27.49-31.62","lot":200,"fee":6388,"subStart":"2026-06-29","subEnd":"2026-07-03","listDate":"2026-07-08","cornerstone":"无","cs":1,"hot":"🔥极高","hs":5,"mcap":"~59亿","gs":false,"sponsor":"国金+中银","loc":"深圳","sh":"汪之涵46%+闻泰3.7%","gain":"-15~+100%+","dec":"赛道博弈","note":"SiC极热·中信退出保荐·创始人减持·对赌","pubLots":6847,"interest":3,"mech":"18C","margin":"","jiaTiers":[15,30,50,100,150,300,450,600,700],"yiTiers":[500,600,700,800,1000,1200,1500,2000],"allLots":[{"lots":1,"amt":6388},{"lots":2,"amt":12776},{"lots":3,"amt":19163},{"lots":4,"amt":25551},{"lots":5,"amt":31939},{"lots":6,"amt":38327},{"lots":7,"amt":44714},{"lots":8,"amt":51102},{"lots":9,"amt":57490},{"lots":10,"amt":63878},{"lots":15,"amt":95817},{"lots":20,"amt":127756},{"lots":25,"amt":159694},{"lots":30,"amt":191633},{"lots":35,"amt":223572},{"lots":40,"amt":255511},{"lots":45,"amt":287450},{"lots":50,"amt":319389},{"lots":100,"amt":638778},{"lots":150,"amt":958167},{"lots":200,"amt":1277556},{"lots":250,"amt":1596944},{"lots":300,"amt":1916333}]},{"code":"01770","name":"东方科脉","type":"zhuang","zs":50,"price":"78.64-101.11","lot":50,"fee":5107,"subStart":"2026-06-29","subEnd":"2026-07-03","listDate":"2026-07-08","cornerstone":"无","cs":1,"hot":"🟢中","hs":2,"mcap":"~46亿","gs":false,"sponsor":"中信(独保)","loc":"嘉兴","sh":"周爱军37%","gain":"+5~20%","dec":"放弃","note":"中信独保=暗盘即巅峰·赛道不热","pubLots":10238,"interest":3,"mech":"B机制","margin":"","jiaTiers":[18,30,70,140,200,400,600,800],"yiTiers":[500,600,700,800,1000,1200,1500,2000],"allLots":[{"lots":1,"amt":5107},{"lots":2,"amt":10213},{"lots":3,"amt":15319},{"lots":4,"amt":20426},{"lots":5,"amt":25532},{"lots":6,"amt":30639},{"lots":7,"amt":35745},{"lots":8,"amt":40852},{"lots":9,"amt":45958},{"lots":10,"amt":51065},{"lots":12,"amt":61278},{"lots":14,"amt":71491},{"lots":16,"amt":81704},{"lots":18,"amt":91917},{"lots":20,"amt":102130},{"lots":30,"amt":153195},{"lots":40,"amt":204259},{"lots":50,"amt":255324},{"lots":60,"amt":306389},{"lots":70,"amt":357454},{"lots":80,"amt":408519},{"lots":90,"amt":459584},{"lots":100,"amt":510648},{"lots":120,"amt":612778},{"lots":140,"amt":714908},{"lots":160,"amt":817038},{"lots":180,"amt":919167},{"lots":200,"amt":1021297}]},{"code":"08090","name":"宝盖新材","type":"cold","price":"6.15-8.51","lot":500,"fee":4298,"subStart":"2026-06-29","subEnd":"2026-07-03","listDate":"2026-07-08","cornerstone":"无","cs":1,"hot":"⚪冷","hs":0,"mcap":"~5亿","gs":false,"sponsor":"中泰国际","loc":"淄博","sh":"刘振韬夫妻97%","gain":"-30~+10%","dec":"放弃","note":"GEM·沟盖板·夫妻店·三死穴","pubLots":14470,"interest":3,"mech":"GEM","margin":"","jiaTiers":[20,40,90,100,200,400,600,900,1000],"yiTiers":[500,600,700,800,1000,1200,1500,2000],"allLots":[{"lots":1,"amt":4298},{"lots":2,"amt":8596},{"lots":3,"amt":12894},{"lots":4,"amt":17192},{"lots":5,"amt":21490},{"lots":6,"amt":25787},{"lots":7,"amt":30085},{"lots":8,"amt":34383},{"lots":9,"amt":38681},{"lots":10,"amt":42979},{"lots":12,"amt":51575},{"lots":14,"amt":60171},{"lots":16,"amt":68767},{"lots":18,"amt":77362},{"lots":20,"amt":85958},{"lots":30,"amt":128937},{"lots":40,"amt":171916},{"lots":50,"amt":214896},{"lots":60,"amt":257875},{"lots":70,"amt":300854},{"lots":80,"amt":343833},{"lots":90,"amt":386812},{"lots":100,"amt":429791}]},{"code":"00537","name":"普源精电","type":"ah","ahCode":"688337","price":"≤45.98","lot":100,"fee":4644,"subStart":"2026-06-30","subEnd":"2026-07-06","listDate":"2026-07-09","cornerstone":"7家(高瓴HHLR+CPE)","cs":4,"hot":"🟡中高","hs":3,"mcap":"A股待查","gs":true,"sponsor":"中信","loc":"苏州","sh":"高瓴+阳光电源","gain":"+5~20%","dec":"适度·小甲","note":"A+H电子测量仪器龙头·高瓴基石·全球第8","pubLots":24802,"interest":4,"mech":"B机制","margin":"","jiaTiers":[20,40,80,100,200,400,600,800,1000],"yiTiers":[500,600,700,800,1000,1200,1500,2000],"allLots":[{"lots":1,"amt":4644},{"lots":2,"amt":9289},{"lots":3,"amt":13933},{"lots":4,"amt":18577},{"lots":5,"amt":23222},{"lots":6,"amt":27866},{"lots":7,"amt":32511},{"lots":8,"amt":37155},{"lots":9,"amt":41799},{"lots":10,"amt":46444},{"lots":15,"amt":69666},{"lots":20,"amt":92887},{"lots":25,"amt":116109},{"lots":30,"amt":139331},{"lots":35,"amt":162553},{"lots":40,"amt":185775},{"lots":45,"amt":208997},{"lots":50,"amt":232219},{"lots":60,"amt":278662},{"lots":70,"amt":325106},{"lots":80,"amt":371550},{"lots":90,"amt":417993},{"lots":100,"amt":464437},{"lots":200,"amt":928874},{"lots":300,"amt":1393311},{"lots":400,"amt":1857748},{"lots":500,"amt":2322185}]},{"code":"01377","name":"鼎泰高科","type":"ah","ahCode":"301377","ahPrice":"¥553.80","ahDisc":"-36%","price":"380.00","lot":100,"fee":38383,"subStart":"2026-06-30","subEnd":"2026-07-06","listDate":"2026-07-09","cornerstone":"17家/43%","cs":3,"hot":"🟢中","hs":2,"mcap":"~2,278亿(A)","gs":true,"sponsor":"中信+汇丰","loc":"东莞","sh":"东莞女首富","gain":"-5~+15%","dec":"一手摸奖","note":"入场费3.8万极贵·A股5日跌16%·中信暗盘跑","pubLots":12632,"interest":4,"mech":"B机制","margin":"","jiaTiers":[2,5,10,20,30,52,78,100,109],"yiTiers":[500,600,700,800,1000,1200,1500,2000],"allLots":[{"lots":1,"amt":38383},{"lots":2,"amt":76766},{"lots":3,"amt":115150},{"lots":4,"amt":153533},{"lots":5,"amt":191916},{"lots":6,"amt":230299},{"lots":7,"amt":268683},{"lots":8,"amt":307066},{"lots":9,"amt":345449},{"lots":10,"amt":383832},{"lots":15,"amt":575748},{"lots":20,"amt":767665},{"lots":25,"amt":959581},{"lots":30,"amt":1151497},{"lots":35,"amt":1343413},{"lots":40,"amt":1535329},{"lots":45,"amt":1727245},{"lots":50,"amt":1919162},{"lots":60,"amt":2302994},{"lots":70,"amt":2686826},{"lots":80,"amt":3070658},{"lots":90,"amt":3454491},{"lots":100,"amt":3838323}]},{"code":"02475","name":"立讯精密","type":"ah","ahCode":"002475","price":"≤63.28","lot":100,"fee":6392,"subStart":"2026-06-30","subEnd":"2026-07-06","listDate":"2026-07-09","cornerstone":"34家(淡马锡+GIC+高瓴)","cs":6,"hot":"🔥极高","hs":5,"mcap":"募240亿HKD","gs":true,"sponsor":"中信+高盛+中金","loc":"深圳","sh":"淡马锡+GIC+ADIA+高瓴+腾讯+富达","gain":"+10~30%","dec":"重仓·甲尾","note":"超级IPO·34家基石全明星·精密制造龙头","pubLots":383000,"interest":4,"mech":"B机制","margin":"","jiaTiers":[10,30,60,100,300,400,600,700],"yiTiers":[500,600,700,800,1000,1200,1500,2000],"allLots":[{"lots":1,"amt":6392},{"lots":2,"amt":12784},{"lots":3,"amt":19175},{"lots":4,"amt":25567},{"lots":5,"amt":31959},{"lots":6,"amt":38351},{"lots":7,"amt":44743},{"lots":8,"amt":51135},{"lots":9,"amt":57526},{"lots":10,"amt":63918},{"lots":15,"amt":95877},{"lots":20,"amt":127836},{"lots":25,"amt":159795},{"lots":30,"amt":191755},{"lots":35,"amt":223714},{"lots":40,"amt":255673},{"lots":45,"amt":287632},{"lots":50,"amt":319591},{"lots":60,"amt":383509},{"lots":70,"amt":447427},{"lots":80,"amt":511345},{"lots":90,"amt":575264},{"lots":100,"amt":639182}]},{"code":"06951","name":"三环集团","type":"ah","ahCode":"300408","price":"≤100.30","lot":100,"fee":10131,"subStart":"2026-06-30","subEnd":"2026-07-06","listDate":"2026-07-09","cornerstone":"17家/50%(淡马锡+阿里+腾讯)","cs":6,"hot":"🔥极高","hs":5,"mcap":"~2,703亿(A)","gs":true,"sponsor":"中国银河国际","loc":"潮州","sh":"张万镇(潮州首富)","gain":"+10~25%","dec":"重仓·甲尾","note":"MLCC龙头·淡马锡+阿里+腾讯基石·供货比亚迪/特斯拉/英伟达","pubLots":71364,"interest":4,"mech":"B机制","margin":"","jiaTiers":[9,15,35,70,100,200,300,400],"yiTiers":[500,600,700,800,1000,1200,1500,2000],"allLots":[{"lots":1,"amt":10131},{"lots":2,"amt":20262},{"lots":3,"amt":30393},{"lots":4,"amt":40525},{"lots":5,"amt":50656},{"lots":6,"amt":60787},{"lots":7,"amt":70918},{"lots":8,"amt":81049},{"lots":9,"amt":91180},{"lots":10,"amt":101312},{"lots":15,"amt":151967},{"lots":20,"amt":202623},{"lots":25,"amt":253279},{"lots":30,"amt":303935},{"lots":35,"amt":354590},{"lots":40,"amt":405246},{"lots":45,"amt":455902},{"lots":50,"amt":506558}]},{"code":"02797","name":"齐云山食品","type":"cold","price":"5.00-8.00","lot":500,"fee":4040,"subStart":"2026-06-30","subEnd":"2026-07-06","listDate":"2026-07-09","cornerstone":"无","cs":1,"hot":"⚪冷","hs":1,"mcap":"微盘","gs":false,"sponsor":"中泰国际","loc":"江西","sh":"创始人控股","gain":"-10~+10%","dec":"放弃","note":"南酸枣糕·无基石·2025营收利润双降","pubLots":25000,"interest":4,"mech":"B机制","margin":"","jiaTiers":[20,40,90,100,200,400,700,900,1000],"yiTiers":[500,600,700,800,1000,1200,1500,2000],"allLots":[{"lots":1,"amt":4040},{"lots":2,"amt":8081},{"lots":3,"amt":12121},{"lots":4,"amt":16161},{"lots":5,"amt":20202},{"lots":6,"amt":24242},{"lots":7,"amt":28282},{"lots":8,"amt":32323},{"lots":9,"amt":36363},{"lots":10,"amt":40403},{"lots":15,"amt":60605},{"lots":20,"amt":80807},{"lots":25,"amt":101009},{"lots":30,"amt":121210},{"lots":35,"amt":141412},{"lots":40,"amt":161614},{"lots":45,"amt":181815},{"lots":50,"amt":202017}]},{"code":"03752","name":"珞石机器人","type":"inst","price":"38.00","lot":100,"fee":3838,"subStart":"2026-06-30","subEnd":"2026-07-06","listDate":"2026-07-09","cornerstone":"5家/31%","cs":3,"hot":"🟡中高","hs":3,"mcap":"待确认","gs":true,"sponsor":"中金+国泰君安","loc":"北京","sh":"庹华39%+国家制造业基金9.7%","gain":"+10~30%","dec":"适度·小甲","note":"柔性协作机器人第一·具身智能·资金可复用","pubLots":23032,"interest":4,"mech":"B机制","margin":"","jiaTiers":[20,50,100,200,300,500,700,1000],"yiTiers":[500,600,700,800,1000,1200,1500,2000],"allLots":[{"lots":1,"amt":3838},{"lots":2,"amt":7677},{"lots":3,"amt":11515},{"lots":4,"amt":15353},{"lots":5,"amt":19192},{"lots":6,"amt":23030},{"lots":7,"amt":26868},{"lots":8,"amt":30707},{"lots":9,"amt":34545},{"lots":10,"amt":38383},{"lots":15,"amt":57575},{"lots":20,"amt":76766},{"lots":25,"amt":95958},{"lots":30,"amt":115150},{"lots":35,"amt":134341},{"lots":40,"amt":153533},{"lots":45,"amt":172725},{"lots":50,"amt":191916},{"lots":60,"amt":230299},{"lots":70,"amt":268683},{"lots":80,"amt":307066},{"lots":90,"amt":345449},{"lots":100,"amt":383832}]},{"code":"02249","name":"晶合集成","type":"ah","ahCode":"688249","ahPrice":"¥59.26","ahDisc":"-51%","price":"30.00-32.30","lot":100,"fee":3263,"subStart":"2026-06-30","subEnd":"2026-07-07","listDate":"2026-07-10","cornerstone":"20家/52%","cs":4,"hot":"🟡热","hs":3,"mcap":"~1,190亿(A)","gs":true,"sponsor":"中金","loc":"合肥","sh":"合肥国资","gain":"+5~20%","dec":"适度·小甲","note":"A+H·H折让51%·半导体晶圆代工·A股强势","pubLots":108000,"interest":5,"mech":"B机制","margin":"","jiaTiers":[30,60,100,200,300,600,900,1000],"yiTiers":[500,600,700,800,1000,1200,1500,2000],"allLots":[{"lots":1,"amt":3263},{"lots":2,"amt":6525},{"lots":3,"amt":9788},{"lots":4,"amt":13050},{"lots":5,"amt":16313},{"lots":6,"amt":19575},{"lots":7,"amt":22838},{"lots":8,"amt":26101},{"lots":9,"amt":29363},{"lots":10,"amt":32626},{"lots":20,"amt":65251},{"lots":30,"amt":97877},{"lots":40,"amt":130503},{"lots":50,"amt":163129},{"lots":60,"amt":195754},{"lots":70,"amt":228380},{"lots":80,"amt":261006},{"lots":90,"amt":293632},{"lots":100,"amt":326257},{"lots":200,"amt":652515},{"lots":300,"amt":978772},{"lots":400,"amt":1305030},{"lots":500,"amt":1631287}]},{"code":"06745","name":"滨化股份","type":"ah","ahCode":"601678","ahPrice":"¥6.47","ahDisc":"-52%","price":"3.05-3.59","lot":1000,"fee":3626,"subStart":"2026-06-30","subEnd":"2026-07-07","listDate":"2026-07-10","cornerstone":"7家/35%","cs":2,"hot":"⚪低","hs":1,"mcap":"~133亿(A)","gs":true,"sponsor":"华泰+建银","loc":"滨州","sh":"滨化集团","gain":"-5~+10%","dec":"一手/放弃","note":"A+H·H折让52%但化工赛道冷","pubLots":35200,"interest":5,"mech":"B机制","margin":"","jiaTiers":[20,50,100,200,300,500,800,1000],"yiTiers":[500,600,700,800,1000,1200,1500,2000],"allLots":[{"lots":1,"amt":3626},{"lots":2,"amt":7252},{"lots":3,"amt":10879},{"lots":4,"amt":14505},{"lots":5,"amt":18131},{"lots":6,"amt":21757},{"lots":7,"amt":25383},{"lots":8,"amt":29010},{"lots":9,"amt":32636},{"lots":10,"amt":36262},{"lots":15,"amt":54393},{"lots":20,"amt":72524},{"lots":25,"amt":90655},{"lots":30,"amt":108786},{"lots":35,"amt":126917},{"lots":40,"amt":145048},{"lots":45,"amt":163179},{"lots":50,"amt":181310}]},{"code":"02523","name":"永康控股","type":"cold","price":"2.20-2.68","lot":2000,"fee":5414,"subStart":"2026-06-30","subEnd":"2026-07-08","listDate":"2026-07-13","cornerstone":"无","cs":1,"hot":"⚪冷","hs":0,"mcap":"极微","gs":false,"sponsor":"华富建业+同人融资","loc":"新加坡","sh":"Navis+创始人","gain":"-20~+5%","dec":"放弃","note":"集装箱堆场·无基石·冷门","pubLots":25800,"interest":6,"mech":"B机制","margin":"","jiaTiers":[10,30,70,100,200,300,500,700,900],"yiTiers":[500,600,700,800,1000,1200,1500,2000],"allLots":[{"lots":1,"amt":5414},{"lots":2,"amt":10828},{"lots":3,"amt":16242},{"lots":4,"amt":21656},{"lots":5,"amt":27070},{"lots":6,"amt":32484},{"lots":7,"amt":37898},{"lots":8,"amt":43312},{"lots":9,"amt":48727},{"lots":10,"amt":54141},{"lots":15,"amt":81211},{"lots":20,"amt":108281},{"lots":25,"amt":135351},{"lots":30,"amt":162422},{"lots":35,"amt":189492},{"lots":40,"amt":216562},{"lots":45,"amt":243633},{"lots":50,"amt":270703}]}]`);
+const IPO_DATA = [{"code":"02667","name":"同仁堂医养","type":"inst","price":"5.48-6.21","lot":500,"fee":2768,"subStart":"2026-06-26","subEnd":"2026-07-02","listDate":"2026-07-07","cornerstone":"3家/47%","cs":4,"hot":"⚪偏低","hs":1,"mcap":"~27亿","gs":true,"sponsor":"中金","loc":"北京","sh":"同仁堂集团84%","gain":"+10~25%","dec":"适度·一手","note":"降价25%重招·Aurora基石削减","pubLots":21631,"interest":1,"mech":"B机制","margin":"18x","jiaTiers":[30,70,140,200,400,600,1000,1400,1800],"yiTiers":[],"allLots":[{"lots":1,"amt":3136.31},{"lots":2,"amt":6272.63},{"lots":3,"amt":9408.94},{"lots":4,"amt":12545.26},{"lots":5,"amt":15681.57},{"lots":6,"amt":18817.88},{"lots":7,"amt":21954.2},{"lots":8,"amt":25090.51},{"lots":9,"amt":28226.82},{"lots":10,"amt":31363.14},{"lots":12,"amt":37635.78},{"lots":14,"amt":43908.4},{"lots":16,"amt":50181.02},{"lots":18,"amt":56453.65},{"lots":20,"amt":62726.28},{"lots":30,"amt":94089.42},{"lots":40,"amt":125452.56},{"lots":50,"amt":156815.69},{"lots":60,"amt":188178.84},{"lots":70,"amt":219541.98},{"lots":80,"amt":250905.11},{"lots":90,"amt":282268.26},{"lots":100,"amt":313631.39},{"lots":120,"amt":376357.67},{"lots":140,"amt":439083.95},{"lots":160,"amt":501810.23},{"lots":180,"amt":564536.51},{"lots":200,"amt":627262.79},{"lots":400,"amt":1254525.56},{"lots":600,"amt":1881788.35},{"lots":800,"amt":2509051.15},{"lots":1000,"amt":3136313.93},{"lots":1200,"amt":3763576.71},{"lots":1400,"amt":4390839.5},{"lots":1600,"amt":5018102.28},{"lots":1800,"amt":5645365.06},{"lots":2000,"amt":6272627.86},{"lots":4000,"amt":12545255.7},{"lots":6000,"amt":18817883.56}]},{"code":"06880","name":"MOMENTA-W","type":"inst","price":"295.60","lot":20,"fee":5972,"subStart":"2026-06-29","subEnd":"2026-07-03","listDate":"2026-07-08","cornerstone":"14家/50%","cs":6,"hot":"🔥极高","hs":5,"mcap":"~590亿","gs":true,"sponsor":"中金+德银","loc":"北京","sh":"曹旭东16%+上汽9.5%+奔驰6.4%","gain":"+25~45%","dec":"重仓·甲尾","note":"物理AI第一股·GIC+富达+BlackRock+奔驰+比亚迪基石","pubLots":99692,"interest":3,"mech":"B机制","margin":"—","jiaTiers":[10,30,60,100,200,300,500,600,800],"yiTiers":[],"allLots":[{"lots":1,"amt":5971.62},{"lots":2,"amt":11943.25},{"lots":3,"amt":17914.87},{"lots":4,"amt":23886.5},{"lots":5,"amt":29858.11},{"lots":6,"amt":35829.73},{"lots":7,"amt":41801.36},{"lots":8,"amt":47772.98},{"lots":9,"amt":53744.61},{"lots":10,"amt":59716.23},{"lots":15,"amt":89574.33},{"lots":20,"amt":119432.45},{"lots":25,"amt":149290.56},{"lots":30,"amt":179148.68},{"lots":35,"amt":209006.79},{"lots":40,"amt":238864.89},{"lots":45,"amt":268723.01},{"lots":50,"amt":298581.12},{"lots":100,"amt":597162.25},{"lots":150,"amt":895743.37},{"lots":200,"amt":1194324.5},{"lots":250,"amt":1492905.64},{"lots":300,"amt":1791486.76},{"lots":350,"amt":2090067.88},{"lots":400,"amt":2388649.01},{"lots":450,"amt":2687230.13},{"lots":500,"amt":2985811.25},{"lots":1000,"amt":5971622.52},{"lots":1500,"amt":8957433.78},{"lots":2000,"amt":11943245.05},{"lots":2500,"amt":14929056.3},{"lots":3000,"amt":17914867.55},{"lots":3500,"amt":20900678.82},{"lots":4000,"amt":23886490.08},{"lots":4500,"amt":26872301.35},{"lots":5000,"amt":29858112.6},{"lots":10000,"amt":59716225.2},{"lots":15000,"amt":89574337.8},{"lots":20000,"amt":119432450.4},{"lots":25000,"amt":149290563},{"lots":30000,"amt":179148675.6},{"lots":35000,"amt":209006788.2},{"lots":40000,"amt":238864900.8},{"lots":45000,"amt":268723013.4}]},{"code":"07687","name":"易控智驾","type":"inst","price":"81.16-87.92","lot":50,"fee":4440,"subStart":"2026-06-29","subEnd":"2026-07-03","listDate":"2026-07-08","cornerstone":"11家/50%","cs":6,"hot":"🔥极高","hs":5,"mcap":"~178亿","gs":true,"sponsor":"海通国际+中信里昂","loc":"福建上杭","sh":"蓝水生33%+紫金4.1%+宁德4.5%","gain":"+30~55%","dec":"重仓·乙头","note":"紫金基石加投+宁德D轮突击·迁址紫金总部","pubLots":52264,"interest":3,"mech":"B机制","margin":"—","jiaTiers":[20,40,90,180,200,400,600,800,1000],"yiTiers":[],"allLots":[{"lots":1,"amt":4440.34},{"lots":2,"amt":8880.67},{"lots":3,"amt":13321.01},{"lots":4,"amt":17761.33},{"lots":5,"amt":22201.66},{"lots":6,"amt":26642},{"lots":7,"amt":31082.34},{"lots":8,"amt":35522.67},{"lots":9,"amt":39963.01},{"lots":10,"amt":44403.34},{"lots":12,"amt":53284},{"lots":14,"amt":62164.67},{"lots":16,"amt":71045.34},{"lots":18,"amt":79926.01},{"lots":20,"amt":88806.67},{"lots":30,"amt":133210.01},{"lots":40,"amt":177613.34},{"lots":50,"amt":222016.68},{"lots":60,"amt":266420.02},{"lots":70,"amt":310823.36},{"lots":80,"amt":355226.7},{"lots":90,"amt":399630.02},{"lots":100,"amt":444033.37},{"lots":120,"amt":532840.03},{"lots":140,"amt":621646.71},{"lots":160,"amt":710453.39},{"lots":180,"amt":799260.06},{"lots":200,"amt":888066.73},{"lots":400,"amt":1776133.47},{"lots":600,"amt":2664200.2},{"lots":800,"amt":3552266.93},{"lots":1000,"amt":4440333.65},{"lots":2000,"amt":8880667.32},{"lots":3000,"amt":13321000.98},{"lots":4000,"amt":17761334.65},{"lots":8000,"amt":35522669.28},{"lots":12000,"amt":53284003.92},{"lots":16000,"amt":71045338.55}]},{"code":"07656","name":"瑞为技术","type":"zhuang","zs":79,"price":"21.66","lot":200,"fee":4376,"subStart":"2026-06-29","subEnd":"2026-07-03","listDate":"2026-07-08","cornerstone":"无","cs":1,"hot":"🟡高","hs":4,"mcap":"~66亿","gs":false,"sponsor":"华泰+建银+农银","loc":"厦门","sh":"詹东晖28%+英特尔4.6%","gain":"-15~+100%+","dec":"妖股博弈","note":"🦄最强妖股·三无+18C·创始人婚变·暗盘必走","pubLots":7022,"interest":3,"mech":"18C","margin":"—","jiaTiers":[20,45,90,150,250,450,600,900,1000],"yiTiers":[],"allLots":[{"lots":1,"amt":4375.69},{"lots":2,"amt":8751.37},{"lots":3,"amt":13127.06},{"lots":4,"amt":17502.76},{"lots":5,"amt":21878.43},{"lots":6,"amt":26254.13},{"lots":7,"amt":30629.82},{"lots":8,"amt":35005.51},{"lots":9,"amt":39381.19},{"lots":10,"amt":43756.88},{"lots":15,"amt":65635.32},{"lots":20,"amt":87513.77},{"lots":25,"amt":109392.2},{"lots":30,"amt":131270.64},{"lots":35,"amt":153149.09},{"lots":40,"amt":175027.53},{"lots":45,"amt":196905.96},{"lots":50,"amt":218784.41},{"lots":100,"amt":437568.83},{"lots":150,"amt":656353.22},{"lots":200,"amt":875137.64},{"lots":250,"amt":1093922.05},{"lots":300,"amt":1312706.47},{"lots":350,"amt":1531490.88},{"lots":400,"amt":1750275.29},{"lots":450,"amt":1969059.69},{"lots":500,"amt":2187844.11},{"lots":600,"amt":2625412.93},{"lots":700,"amt":3062981.75},{"lots":800,"amt":3500550.58},{"lots":900,"amt":3938119.4},{"lots":1000,"amt":4375688.22},{"lots":1250,"amt":5469610.28},{"lots":1500,"amt":6563532.34},{"lots":1750,"amt":7657454.39},{"lots":2000,"amt":8751376.45},{"lots":2250,"amt":9845298.5},{"lots":2500,"amt":10939220.56},{"lots":3000,"amt":13127064.65}]},{"code":"09971","name":"基本半导体","type":"zhuang","zs":75,"price":"27.49-31.62","lot":200,"fee":6388,"subStart":"2026-06-29","subEnd":"2026-07-03","listDate":"2026-07-08","cornerstone":"无","cs":1,"hot":"🔥极高","hs":5,"mcap":"~59亿","gs":false,"sponsor":"国金+中银","loc":"深圳","sh":"汪之涵46%+闻泰3.7%","gain":"-15~+100%+","dec":"赛道博弈","note":"SiC极热·中信退出保荐·创始人减持·对赌","pubLots":6847,"interest":3,"mech":"18C","margin":"—","jiaTiers":[15,30,50,100,150,300,450,600,700],"yiTiers":[],"allLots":[{"lots":1,"amt":6387.78},{"lots":2,"amt":12775.55},{"lots":3,"amt":19163.33},{"lots":4,"amt":25551.11},{"lots":5,"amt":31938.89},{"lots":6,"amt":38326.66},{"lots":7,"amt":44714.45},{"lots":8,"amt":51102.23},{"lots":9,"amt":57490.01},{"lots":10,"amt":63877.77},{"lots":15,"amt":95816.66},{"lots":20,"amt":127755.55},{"lots":25,"amt":159694.44},{"lots":30,"amt":191633.32},{"lots":35,"amt":223572.22},{"lots":40,"amt":255511.1},{"lots":45,"amt":287449.99},{"lots":50,"amt":319388.88},{"lots":100,"amt":638777.75},{"lots":150,"amt":958166.63},{"lots":200,"amt":1277555.51},{"lots":250,"amt":1596944.39},{"lots":300,"amt":1916333.26},{"lots":350,"amt":2235722.14},{"lots":400,"amt":2555111.01},{"lots":450,"amt":2874499.9},{"lots":500,"amt":3193888.76},{"lots":600,"amt":3832666.52},{"lots":700,"amt":4471444.27},{"lots":800,"amt":5110222.03},{"lots":900,"amt":5748999.79},{"lots":1000,"amt":6387777.55},{"lots":1250,"amt":7984721.93},{"lots":1500,"amt":9581666.31},{"lots":1750,"amt":11178610.7},{"lots":2000,"amt":12775555.08},{"lots":2250,"amt":14372499.46},{"lots":2500,"amt":15969443.86},{"lots":2750,"amt":17566388.24},{"lots":3000,"amt":19163332.62},{"lots":3250,"amt":20760277}]},{"code":"01770","name":"东方科脉","type":"zhuang","zs":50,"price":"78.64-101.11","lot":50,"fee":5107,"subStart":"2026-06-29","subEnd":"2026-07-03","listDate":"2026-07-08","cornerstone":"无","cs":1,"hot":"🟢中","hs":2,"mcap":"~46亿","gs":false,"sponsor":"中信(独保)","loc":"嘉兴","sh":"周爱军37%","gain":"+5~20%","dec":"放弃","note":"中信独保=暗盘即巅峰·赛道不热","pubLots":10238,"interest":3,"mech":"B机制","margin":"—","jiaTiers":[18,30,70,140,200,400,600,800],"yiTiers":[],"allLots":[{"lots":1,"amt":5106.5},{"lots":2,"amt":10212.97},{"lots":3,"amt":15319.46},{"lots":4,"amt":20425.94},{"lots":5,"amt":25532.43},{"lots":6,"amt":30638.91},{"lots":7,"amt":35745.4},{"lots":8,"amt":40851.88},{"lots":9,"amt":45958.37},{"lots":10,"amt":51064.85},{"lots":12,"amt":61277.82},{"lots":14,"amt":71490.79},{"lots":16,"amt":81703.75},{"lots":18,"amt":91916.73},{"lots":20,"amt":102129.69},{"lots":30,"amt":153194.54},{"lots":40,"amt":204259.39},{"lots":50,"amt":255324.23},{"lots":60,"amt":306389.08},{"lots":70,"amt":357453.92},{"lots":80,"amt":408518.78},{"lots":90,"amt":459583.62},{"lots":100,"amt":510648.47},{"lots":120,"amt":612778.17},{"lots":140,"amt":714907.86},{"lots":160,"amt":817037.55},{"lots":180,"amt":919167.24},{"lots":200,"amt":1021296.95},{"lots":400,"amt":2042593.88},{"lots":600,"amt":3063890.83},{"lots":800,"amt":4085187.78},{"lots":1000,"amt":5106484.72},{"lots":1200,"amt":6127781.66},{"lots":1400,"amt":7149078.61},{"lots":1600,"amt":8170375.55},{"lots":1800,"amt":9191672.49},{"lots":2000,"amt":10212969.44},{"lots":3000,"amt":15319454.16},{"lots":4000,"amt":20425938.86}]},{"code":"08090","name":"宝盖新材","type":"cold","price":"6.15-8.51","lot":500,"fee":4298,"subStart":"2026-06-29","subEnd":"2026-07-03","listDate":"2026-07-08","cornerstone":"无","cs":1,"hot":"⚪冷","hs":0,"mcap":"~5亿","gs":false,"sponsor":"中泰国际","loc":"淄博","sh":"刘振韬夫妻97%","gain":"-30~+10%","dec":"放弃","note":"GEM·沟盖板·夫妻店·三死穴","pubLots":14470,"interest":3,"mech":"GEM","margin":"—","jiaTiers":[20,40,90,100,200,400,600,900,1000],"yiTiers":[],"allLots":[{"lots":1,"amt":4297.91},{"lots":2,"amt":8595.82},{"lots":3,"amt":12893.73},{"lots":4,"amt":17191.65},{"lots":5,"amt":21489.55},{"lots":6,"amt":25787.47},{"lots":7,"amt":30085.37},{"lots":8,"amt":34383.29},{"lots":9,"amt":38681.2},{"lots":10,"amt":42979.11},{"lots":12,"amt":51574.94},{"lots":14,"amt":60170.77},{"lots":16,"amt":68766.59},{"lots":18,"amt":77362.41},{"lots":20,"amt":85958.24},{"lots":30,"amt":128937.35},{"lots":40,"amt":171916.48},{"lots":50,"amt":214895.58},{"lots":60,"amt":257874.69},{"lots":70,"amt":300853.82},{"lots":80,"amt":343832.93},{"lots":90,"amt":386812.05},{"lots":100,"amt":429791.17},{"lots":120,"amt":515749.41},{"lots":140,"amt":601707.63},{"lots":160,"amt":687665.87},{"lots":180,"amt":773624.1},{"lots":200,"amt":859582.34},{"lots":240,"amt":1031498.8},{"lots":280,"amt":1203415.27},{"lots":320,"amt":1375331.73},{"lots":360,"amt":1547248.21},{"lots":400,"amt":1719164.66},{"lots":500,"amt":2148955.83},{"lots":600,"amt":2578747},{"lots":700,"amt":3008538.18},{"lots":800,"amt":3438329.35},{"lots":1000,"amt":4297911.68},{"lots":1200,"amt":5157494.01}]},{"code":"00537","name":"普源精电","type":"ah","ahCode":"688337","price":"≤45.98","lot":100,"fee":4644,"subStart":"2026-06-30","subEnd":"2026-07-06","listDate":"2026-07-09","cornerstone":"7家(高瓴HHLR+CPE)","cs":4,"hot":"🟡中高","hs":3,"mcap":"A股待查","gs":true,"sponsor":"中信","loc":"苏州","sh":"高瓴+阳光电源","gain":"+5~20%","dec":"适度·小甲","note":"A+H电子测量仪器龙头·高瓴基石·全球第8","pubLots":24802,"interest":4,"mech":"B机制","margin":"—","jiaTiers":[20,40,80,100,200,400,600,800,1000],"yiTiers":[],"allLots":[{"lots":1,"amt":4644.37},{"lots":2,"amt":9288.74},{"lots":3,"amt":13933.11},{"lots":4,"amt":18577.49},{"lots":5,"amt":23221.85},{"lots":6,"amt":27866.22},{"lots":7,"amt":32510.6},{"lots":8,"amt":37154.97},{"lots":9,"amt":41799.34},{"lots":10,"amt":46443.71},{"lots":15,"amt":69665.56},{"lots":20,"amt":92887.42},{"lots":25,"amt":116109.26},{"lots":30,"amt":139331.12},{"lots":35,"amt":162552.98},{"lots":40,"amt":185774.84},{"lots":45,"amt":208996.69},{"lots":50,"amt":232218.54},{"lots":60,"amt":278662.25},{"lots":70,"amt":325105.96},{"lots":80,"amt":371549.66},{"lots":90,"amt":417993.37},{"lots":100,"amt":464437.08},{"lots":200,"amt":928874.17},{"lots":300,"amt":1393311.25},{"lots":400,"amt":1857748.33},{"lots":500,"amt":2322185.41},{"lots":600,"amt":2786622.5},{"lots":700,"amt":3251059.58},{"lots":800,"amt":3715496.67},{"lots":900,"amt":4179933.75},{"lots":1000,"amt":51088079.14},{"lots":2000,"amt":9288741.65},{"lots":3000,"amt":13933112.49},{"lots":4000,"amt":18577483.32},{"lots":5000,"amt":23221854.16},{"lots":6000,"amt":27866224.98},{"lots":7000,"amt":32510595.81},{"lots":8000,"amt":37154966.65},{"lots":9000,"amt":41799337.46}]},{"code":"01377","name":"鼎泰高科","type":"ah","ahCode":"301377","ahPrice":"¥553.80","ahDisc":"-36%","price":"380.00","lot":100,"fee":38383,"subStart":"2026-06-30","subEnd":"2026-07-06","listDate":"2026-07-09","cornerstone":"17家/43%","cs":3,"hot":"🟢中","hs":2,"mcap":"~2,278亿(A)","gs":true,"sponsor":"中信+汇丰","loc":"东莞","sh":"东莞女首富","gain":"-5~+15%","dec":"一手摸奖","note":"入场费3.8万极贵·A股5日跌16%·中信暗盘跑","pubLots":12632,"interest":4,"mech":"B机制","margin":"—","jiaTiers":[2,5,10,20,30,52,78,100,109],"yiTiers":[],"allLots":[{"lots":1,"amt":38383},{"lots":2,"amt":76766},{"lots":3,"amt":115149},{"lots":4,"amt":153532},{"lots":5,"amt":191915},{"lots":6,"amt":230298},{"lots":7,"amt":268681},{"lots":8,"amt":307064},{"lots":9,"amt":345447},{"lots":10,"amt":383830},{"lots":15,"amt":575745},{"lots":20,"amt":767660},{"lots":25,"amt":959575},{"lots":30,"amt":1151490},{"lots":35,"amt":1343405},{"lots":40,"amt":1535320},{"lots":45,"amt":1727235},{"lots":50,"amt":1919150},{"lots":60,"amt":2302980},{"lots":70,"amt":2686810},{"lots":80,"amt":3070640},{"lots":90,"amt":3454470},{"lots":100,"amt":3838300},{"lots":200,"amt":7676600},{"lots":300,"amt":11514900},{"lots":400,"amt":15353200},{"lots":500,"amt":19191500},{"lots":600,"amt":23029800},{"lots":700,"amt":26868100},{"lots":800,"amt":30706400},{"lots":900,"amt":34544700},{"lots":1000,"amt":38383000},{"lots":2000,"amt":76766000},{"lots":3000,"amt":115149000},{"lots":4000,"amt":153532000},{"lots":5000,"amt":191915000}]},{"code":"02475","name":"立讯精密","type":"ah","ahCode":"002475","price":"≤63.28","lot":100,"fee":6392,"subStart":"2026-06-30","subEnd":"2026-07-06","listDate":"2026-07-09","cornerstone":"34家(淡马锡+GIC+高瓴)","cs":6,"hot":"🔥极高","hs":5,"mcap":"募240亿HKD","gs":true,"sponsor":"中信+高盛+中金","loc":"深圳","sh":"淡马锡+GIC+ADIA+高瓴+腾讯+富达","gain":"+10~30%","dec":"重仓·甲尾","note":"超级IPO·34家基石全明星·精密制造龙头","pubLots":383000,"interest":4,"mech":"B机制","margin":"—","jiaTiers":[10,30,60,100,300,400,600,700],"yiTiers":[],"allLots":[{"lots":1,"amt":6391.82},{"lots":2,"amt":12783.64},{"lots":3,"amt":19175.45},{"lots":4,"amt":25567.27},{"lots":5,"amt":31959.09},{"lots":6,"amt":38350.92},{"lots":7,"amt":44742.73},{"lots":8,"amt":51134.55},{"lots":9,"amt":57526.37},{"lots":10,"amt":63918.18},{"lots":15,"amt":95877.26},{"lots":20,"amt":127836.36},{"lots":25,"amt":159795.45},{"lots":30,"amt":191754.54},{"lots":35,"amt":223713.62},{"lots":40,"amt":255672.71},{"lots":45,"amt":287631.81},{"lots":50,"amt":319590.89},{"lots":60,"amt":383509.07},{"lots":70,"amt":447427.25},{"lots":80,"amt":511345.43},{"lots":90,"amt":575263.61},{"lots":100,"amt":639181.79},{"lots":200,"amt":1278363.58},{"lots":300,"amt":1917545.37},{"lots":400,"amt":2556727.15},{"lots":500,"amt":3195908.95},{"lots":600,"amt":3835090.73},{"lots":700,"amt":4474272.51},{"lots":800,"amt":5113454.3},{"lots":900,"amt":5752636.09},{"lots":1000,"amt":6391817.88},{"lots":2000,"amt":12783635.75},{"lots":3000,"amt":19175453.65},{"lots":4000,"amt":25567271.52},{"lots":5000,"amt":31959089.4},{"lots":6000,"amt":38350907.28},{"lots":7000,"amt":44742725.15},{"lots":8000,"amt":51134543.05},{"lots":9000,"amt":57526360.92}]},{"code":"06951","name":"三环集团","type":"ah","ahCode":"300408","price":"≤100.30","lot":100,"fee":10131,"subStart":"2026-06-30","subEnd":"2026-07-06","listDate":"2026-07-09","cornerstone":"17家/50%(淡马锡+阿里+腾讯)","cs":6,"hot":"🔥极高","hs":5,"mcap":"~2,703亿(A)","gs":true,"sponsor":"中国银河国际","loc":"潮州","sh":"张万镇(潮州首富)","gain":"+10~25%","dec":"重仓·甲尾","note":"MLCC龙头·淡马锡+阿里+腾讯基石·供货比亚迪/特斯拉/英伟达","pubLots":71364,"interest":4,"mech":"B机制","margin":"—","jiaTiers":[9,15,35,70,100,200,300,400],"yiTiers":[],"allLots":[{"lots":1,"amt":10131.16},{"lots":2,"amt":20262.3},{"lots":3,"amt":30393.46},{"lots":4,"amt":40524.61},{"lots":5,"amt":50655.76},{"lots":6,"amt":60786.91},{"lots":7,"amt":70918.08},{"lots":8,"amt":81049.22},{"lots":9,"amt":91180.38},{"lots":10,"amt":101311.53},{"lots":15,"amt":151967.29},{"lots":20,"amt":202623.05},{"lots":25,"amt":253278.82},{"lots":30,"amt":303934.57},{"lots":35,"amt":354590.34},{"lots":40,"amt":405246.1},{"lots":45,"amt":455901.87},{"lots":50,"amt":506557.62},{"lots":60,"amt":607869.15},{"lots":70,"amt":709180.68},{"lots":80,"amt":810492.2},{"lots":90,"amt":911803.72},{"lots":100,"amt":1013115.25},{"lots":200,"amt":2026230.51},{"lots":300,"amt":3039345.76},{"lots":400,"amt":4052461.02},{"lots":500,"amt":5065576.28},{"lots":1000,"amt":10131152.56},{"lots":1500,"amt":15196728.83},{"lots":2000,"amt":20262305.1},{"lots":2500,"amt":25327881.38},{"lots":5000,"amt":50655762.76},{"lots":7500,"amt":75983644.13}]},{"code":"02797","name":"齐云山食品","type":"cold","price":"5.00-8.00","lot":500,"fee":4040,"subStart":"2026-06-30","subEnd":"2026-07-06","listDate":"2026-07-09","cornerstone":"无","cs":1,"hot":"⚪冷","hs":1,"mcap":"微盘","gs":false,"sponsor":"中泰国际","loc":"江西","sh":"创始人控股","gain":"-10~+10%","dec":"放弃","note":"南酸枣糕·无基石·2025营收利润双降","pubLots":5000,"interest":4,"mech":"B机制","margin":"—","jiaTiers":[20,40,90,100,200,400,700,900,1000],"yiTiers":[],"allLots":[{"lots":1,"amt":4040.35},{"lots":2,"amt":8080.68},{"lots":3,"amt":12121.02},{"lots":4,"amt":16161.35},{"lots":5,"amt":20201.7},{"lots":6,"amt":24242.05},{"lots":7,"amt":28282.38},{"lots":8,"amt":32322.72},{"lots":9,"amt":36363.05},{"lots":10,"amt":40403.4},{"lots":15,"amt":60605.1},{"lots":20,"amt":80806.8},{"lots":25,"amt":101008.5},{"lots":30,"amt":121210.2},{"lots":35,"amt":141411.9},{"lots":40,"amt":161613.6},{"lots":45,"amt":181815.3},{"lots":50,"amt":202017},{"lots":60,"amt":242420.4},{"lots":70,"amt":282823.8},{"lots":80,"amt":323227.2},{"lots":90,"amt":363630.6},{"lots":100,"amt":404034},{"lots":200,"amt":808068},{"lots":300,"amt":1212102},{"lots":400,"amt":1616136},{"lots":500,"amt":2020170},{"lots":600,"amt":2424204},{"lots":700,"amt":2828238},{"lots":800,"amt":3232272},{"lots":900,"amt":3636306},{"lots":1000,"amt":4040340},{"lots":1500,"amt":6060510}]},{"code":"03752","name":"珞石机器人","type":"inst","price":"38.00","lot":100,"fee":3838,"subStart":"2026-06-30","subEnd":"2026-07-06","listDate":"2026-07-09","cornerstone":"5家/31%","cs":3,"hot":"🟡中高","hs":3,"mcap":"待确认","gs":true,"sponsor":"中金+国泰君安","loc":"北京","sh":"庹华39%+国家制造业基金9.7%","gain":"+10~30%","dec":"适度·小甲","note":"柔性协作机器人第一·具身智能·资金可复用","pubLots":23032,"interest":4,"mech":"B机制","margin":"—","jiaTiers":[20,50,100,200,300,500,700,1000],"yiTiers":[],"allLots":[{"lots":1,"amt":3838.32},{"lots":2,"amt":7676.65},{"lots":3,"amt":11514.97},{"lots":4,"amt":15353.29},{"lots":5,"amt":19191.61},{"lots":6,"amt":23029.94},{"lots":7,"amt":26868.26},{"lots":8,"amt":30706.59},{"lots":9,"amt":34544.9},{"lots":10,"amt":38383.24},{"lots":15,"amt":57574.85},{"lots":20,"amt":76766.45},{"lots":25,"amt":95958.08},{"lots":30,"amt":115149.69},{"lots":35,"amt":134341.3},{"lots":40,"amt":153532.92},{"lots":45,"amt":172724.54},{"lots":50,"amt":191916.16},{"lots":60,"amt":230299.38},{"lots":70,"amt":268682.61},{"lots":80,"amt":307065.85},{"lots":90,"amt":345449.06},{"lots":100,"amt":383832.3},{"lots":200,"amt":767664.6},{"lots":300,"amt":1151496.9},{"lots":400,"amt":1535329.2},{"lots":500,"amt":1919161.5},{"lots":600,"amt":2302993.8},{"lots":700,"amt":2686826.1},{"lots":800,"amt":3070658.4},{"lots":900,"amt":3454490.7},{"lots":1000,"amt":3838323},{"lots":2000,"amt":7676646},{"lots":3000,"amt":11514969},{"lots":4000,"amt":15353292},{"lots":5000,"amt":19191615},{"lots":6000,"amt":23029938},{"lots":7000,"amt":26868261},{"lots":8000,"amt":30706584},{"lots":9000,"amt":34544907}]},{"code":"02249","name":"晶合集成","type":"ah","ahCode":"688249","ahPrice":"¥59.26","ahDisc":"-51%","price":"30.00-32.30","lot":100,"fee":3263,"subStart":"2026-06-30","subEnd":"2026-07-07","listDate":"2026-07-10","cornerstone":"20家/52%","cs":4,"hot":"🟡热","hs":3,"mcap":"~1,190亿(A)","gs":true,"sponsor":"中金","loc":"合肥","sh":"合肥国资","gain":"+5~20%","dec":"适度·小甲","note":"A+H·H折让51%·半导体晶圆代工·A股强势","pubLots":216167,"interest":5,"mech":"B机制","margin":"—","jiaTiers":[30,60,100,200,300,600,900,1000],"yiTiers":[],"allLots":[{"lots":1,"amt":3262.57},{"lots":2,"amt":6525.14},{"lots":3,"amt":9787.72},{"lots":4,"amt":13050.3},{"lots":5,"amt":16312.87},{"lots":6,"amt":19575.44},{"lots":7,"amt":22838.02},{"lots":8,"amt":26100.6},{"lots":9,"amt":29363.16},{"lots":10,"amt":32625.74},{"lots":20,"amt":65251.49},{"lots":30,"amt":97877.24},{"lots":40,"amt":130502.98},{"lots":50,"amt":163128.72},{"lots":60,"amt":195754.47},{"lots":70,"amt":228380.21},{"lots":80,"amt":261005.97},{"lots":90,"amt":293631.71},{"lots":100,"amt":326257.45},{"lots":200,"amt":652514.91},{"lots":300,"amt":978772.36},{"lots":400,"amt":1305029.82},{"lots":500,"amt":1631287.28},{"lots":600,"amt":1957544.74},{"lots":700,"amt":2283802.19},{"lots":800,"amt":2610059.65},{"lots":900,"amt":2936317.1},{"lots":1000,"amt":3262574.56},{"lots":2000,"amt":6525149.1},{"lots":3000,"amt":9787723.66},{"lots":4000,"amt":13050298.2},{"lots":5000,"amt":16312872.76}]},{"code":"06745","name":"滨化股份","type":"ah","ahCode":"601678","ahPrice":"¥6.47","ahDisc":"-52%","price":"3.05-3.59","lot":1000,"fee":3626,"subStart":"2026-06-30","subEnd":"2026-07-07","listDate":"2026-07-10","cornerstone":"7家/35%","cs":2,"hot":"⚪低","hs":1,"mcap":"~133亿(A)","gs":true,"sponsor":"华泰+建银","loc":"滨州","sh":"滨化集团","gain":"-5~+10%","dec":"一手/放弃","note":"A+H·H折让52%但化工赛道冷","pubLots":35200,"interest":5,"mech":"B机制","margin":"—","jiaTiers":[20,50,100,200,300,500,800,1000],"yiTiers":[],"allLots":[{"lots":1,"amt":3626.21},{"lots":2,"amt":7252.41},{"lots":3,"amt":10878.62},{"lots":4,"amt":14504.82},{"lots":5,"amt":18131.02},{"lots":6,"amt":21757.23},{"lots":7,"amt":25383.44},{"lots":8,"amt":29009.64},{"lots":9,"amt":32635.85},{"lots":10,"amt":36262.05},{"lots":15,"amt":54393.07},{"lots":20,"amt":72524.11},{"lots":25,"amt":90655.12},{"lots":30,"amt":108786.16},{"lots":35,"amt":126917.18},{"lots":40,"amt":145048.21},{"lots":45,"amt":163179.23},{"lots":50,"amt":181310.26},{"lots":60,"amt":217572.31},{"lots":70,"amt":253834.37},{"lots":80,"amt":290096.41},{"lots":90,"amt":326358.46},{"lots":100,"amt":362620.51},{"lots":200,"amt":725241.04},{"lots":300,"amt":1087861.55},{"lots":400,"amt":1450482.05},{"lots":500,"amt":1813102.58}]},{"code":"02523","name":"永康控股","type":"cold","price":"2.20-2.68","lot":2000,"fee":5414,"subStart":"2026-06-30","subEnd":"2026-07-08","listDate":"2026-07-13","cornerstone":"无","cs":1,"hot":"⚪冷","hs":0,"mcap":"极微","gs":false,"sponsor":"华富建业+同人融资","loc":"新加坡","sh":"Navis+创始人","gain":"-20~+5%","dec":"放弃","note":"集装箱堆场·无基石·冷门","pubLots":25800,"interest":6,"mech":"B机制","margin":"—","jiaTiers":[10,30,70,100,200,300,500,700,900],"yiTiers":[],"allLots":[{"lots":1,"amt":5414.05},{"lots":2,"amt":10828.12},{"lots":3,"amt":16242.16},{"lots":4,"amt":21656.22},{"lots":5,"amt":27070.27},{"lots":6,"amt":32484.34},{"lots":7,"amt":37898.39},{"lots":8,"amt":43312.44},{"lots":9,"amt":48726.5},{"lots":10,"amt":54140.56},{"lots":15,"amt":81210.83},{"lots":20,"amt":108281.11},{"lots":25,"amt":135351.39},{"lots":30,"amt":162421.67},{"lots":35,"amt":189491.95},{"lots":40,"amt":216562.22},{"lots":45,"amt":243632.5},{"lots":50,"amt":270702.78},{"lots":100,"amt":541405.55},{"lots":150,"amt":812108.35},{"lots":200,"amt":1082811.12},{"lots":250,"amt":1353513.9},{"lots":300,"amt":1624216.68},{"lots":350,"amt":1894919.45},{"lots":400,"amt":2165622.25},{"lots":450,"amt":2436325.02}]}];
 
-const COMMISSION = 50;
-const TODAY = '2026-06-30';
+// Also define hearing/listening pipeline data for toolbox
+const PIPELINE = [{"name":"本末动力(北京)科技","date":"2026-06-29","stage":"通过聆讯"},{"name":"厦门瑞为信息技术","date":"2026-06-29","stage":"通过聆讯"},{"name":"上海哥瑞利软件","date":"2026-06-24","stage":"通过聆讯"},{"name":"广东鼎泰高科技术","date":"2026-06-24","stage":"通过聆讯"},{"name":"坦博尔集团","date":"2026-06-23","stage":"通过聆讯"},{"name":"普源精电","date":"2026-06-23","stage":"通过聆讯"},{"name":"立讯精密","date":"2026-06-24","stage":"通过聆讯"},{"name":"三环集团","date":"2026-06-23","stage":"通过聆讯"}];
 
-// ==================== STATE (persisted via localStorage) ====================
-function loadState(){
-  try{
-    var s = JSON.parse(localStorage.getItem('ipo_calc_state'));
-    return s || {funds:{A:500000,B:500000,C:500000},tiers:{},sel:[],filter:'all'};
-  }catch(e){return {funds:{A:500000,B:500000,C:500000},tiers:{},sel:[],filter:'all'};}
+// ==================== APP STATE ====================
+let currentTab = localStorage.getItem('ipo_tab')||'list';
+let calMonth = new Date(2026,5,30); // June 2026
+let selectedDay = '2026-06-30';
+let calViewMode = 'month'; // 'month' | 'gantt'
+
+// 持久化：从 localStorage 恢复上次的选股状态
+function loadCalcState(){
+  try{ return JSON.parse(localStorage.getItem('ipo_calc_state')||'null'); }catch(e){ return null; }
 }
-function saveState(st){ localStorage.setItem('ipo_calc_state', JSON.stringify(st)); }
-
-// ==================== RENDER ====================
-function render(){
-  var st = loadState();
-  var funds = st.funds, tiers = st.tiers, selCodes = st.sel, filter = st.filter;
-
-  // Compute used per account (本金 = (申购金额+佣金)/10)
-  var used = {A:0,B:0,C:0};
-  selCodes.forEach(function(code){
-    ['A','B','C'].forEach(function(acc){
-      var t = tiers[code] && tiers[code][acc];
-      if(t) used[acc] += (t.amt + COMMISSION) / 10;
-    });
-  });
-
-  // Filter stocks
-  var stocks = IPO_DATA.slice();
-  if(filter==='ah') stocks = stocks.filter(function(s){return s.type==='ah';});
-  else if(filter==='inst') stocks = stocks.filter(function(s){return s.type==='inst';});
-  else if(filter==='zhuang') stocks = stocks.filter(function(s){return s.type==='zhuang';});
-  else if(filter==='subbing') stocks = stocks.filter(function(s){return s.subEnd>=TODAY;});
-
-  // Build HTML
-  var html = '';
-
-  // Title
-  html += '<h1>📊 港新股打新计算器</h1>';
-
-  // Fund inputs
-  html += '<div class="card"><h3>💰 账户资金 (10x杠杆，显示为所需本金)</h3>';
-  html += '<div class="fund-row">';
-  ['A','B','C'].forEach(function(acc){
-    html += '<div class="fund-item"><label>账户'+acc+' (HKD)</label>';
-    html += '<input type="number" id="fund'+acc+'" value="'+funds[acc]+'" onchange="onFundChange(\''+acc+'\',this.value)" placeholder="500000">';
-    html += '</div>';
-  });
-  html += '</div></div>';
-
-  // Conflict bar
-  var conflict = buildConflict();
-  if(conflict) html += '<div class="conflict-bar">'+conflict+'</div>';
-
-  // Filter bar
-  html += '<div class="filter-bar">';
-  var filters = [
-    {k:'all',l:'全部'},{k:'ah',l:'🔷 A+H'},{k:'inst',l:'⭐ 机构'},{k:'zhuang',l:'🦄 庄票'},{k:'subbing',l:'🟢 招股中'}
-  ];
-  filters.forEach(function(f){
-    html += '<button class="filter-btn'+(filter===f.k?' active':'')+'" onclick="onFilter(\''+f.k+'\')">'+f.l+'</button>';
-  });
-  html += '</div>';
-
-  // Stock list
-  stocks.forEach(function(s){
-    var sel = selCodes.indexOf(s.code)>=0;
-    var stockTier = tiers[s.code] || {};
-
-    // Remaining funds for this stock (remaining = total - used + current_stock_already_used)
-    var curUsed = {A:0,B:0,C:0};
-    ['A','B','C'].forEach(function(acc){
-      var t = stockTier[acc];
-      if(t) curUsed[acc] = (t.amt + COMMISSION) / 10;
-    });
-    var remA = (funds.A - used.A + curUsed.A)/1e4;
-    var remB = (funds.B - used.B + curUsed.B)/1e4;
-    var remC = (funds.C - used.C + curUsed.C)/1e4;
-
-    // Type icon
-    var typeIcon = s.type==='ah'?'🔷':s.type==='inst'?'⭐':s.type==='zhuang'?'🦄':'';
-
-    html += '<div class="stock-card'+(sel?' sel':'')+'">';
-    // Header
-    html += '<div class="stock-hdr" onclick="toggleStock(\''+s.code+'\')">';
-    html += '<div class="chk'+(sel?' on':'')+'">'+(sel?'✓':'')+'</div>';
-    html += '<div class="stock-info">';
-    html += '<div class="n">'+typeIcon+' '+s.name+' <code>'+s.code+'</code></div>';
-    html += '<div class="m"><span style="background:rgba(88,166,255,.15);color:var(--accent);padding:1px 6px;border-radius:4px;font-size:.7em">'+(s.mech||'—')+'</span> · '+s.lot+'股/手 · '+s.fee.toLocaleString()+' HKD · <span class="deadline">⏰ '+s.subEnd+'</span></div>';
-    html += '</div>';
-    html += '<span class="detail" onclick="event.stopPropagation();showDetail(\''+s.code+'\')">ℹ️</span>';
-    html += '<span class="arrow">'+(sel?'▼':'▶')+'</span>';
-    html += '</div>';
-
-    // Tags
-    html += '<div class="stock-tags">';
-    html += '<span class="tag">'+(s.cornerstone||'无基石')+'</span>';
-    html += '<span class="tag">'+(s.hot||'')+'</span>';
-    html += '<span class="tag tag-dec">'+(s.dec||'')+'</span>';
-    if(s.note) html += '<span class="tag tag-note" title="'+s.note+'">'+s.note+'</span>';
-    html += '</div>';
-
-    // Tier table (expanded)
-    if(sel && s.allLots && s.allLots.length){
-      html += '<div class="tier-wrap"><div class="tier-table">';
-      // Header
-      html += '<div class="tier-row tier-hdr">';
-      html += '<div class="tier-cell lots">手数</div>';
-      html += '<div class="tier-cell amt">申购金额</div>';
-      html += '<div class="tier-cell cash">需本金</div>';
-      ['A','B','C'].forEach(function(acc){
-        html += '<div class="tier-cell pick">'+acc+'<span class="remain">余'+((acc==='A'?remA:acc==='B'?remB:remC).toFixed(0))+'万</span></div>';
-      });
-      html += '</div>';
-      // Rows
-      s.allLots.forEach(function(lot){
-        var cash = (lot.amt + COMMISSION) / 10;
-        var cashWan = cash/1e4;
-        var picks = {};
-        ['A','B','C'].forEach(function(acc){
-          picks[acc] = !!(stockTier[acc] && stockTier[acc].lots === lot.lots);
-        });
-        var overs = {};
-        ['A','B','C'].forEach(function(acc){
-          var accRem = acc==='A'?remA:acc==='B'?remB:remC;
-          overs[acc] = cashWan > accRem && !picks[acc];
-        });
-        html += '<div class="tier-row">';
-        html += '<div class="tier-cell lots">'+lot.lots.toLocaleString()+'</div>';
-        html += '<div class="tier-cell amt">'+(lot.amt/1e4).toFixed(0)+'万</div>';
-        html += '<div class="tier-cell cash">'+cashWan.toFixed(1)+'万</div>';
-        ['A','B','C'].forEach(function(acc){
-          var cls = 'pick-btn';
-          if(picks[acc]) cls += ' done';
-          if(overs[acc]) cls += ' over';
-          var txt = picks[acc] ? '✓' : (overs[acc] ? '超' : '选');
-          html += '<div class="tier-cell pick"><button class="'+cls+'" onclick="event.stopPropagation();pickTier(\''+s.code+'\',\''+acc+'\','+lot.lots+','+lot.amt+')"'+((overs[acc]&&!picks[acc])?' disabled':'')+'>'+txt+'</button></div>';
-        });
-        html += '</div>';
-      });
-      html += '</div></div>';
-    }
-
-    html += '</div>'; // stock-card
-  });
-
-  if(!stocks.length) html += '<div class="empty">没有匹配的股票</div>';
-
-  // Reset
-  html += '<div class="reset-bar"><button class="reset-btn" onclick="resetAll()">🔄 清除全部选择</button></div>';
-
-  document.getElementById('app').innerHTML = html;
-
-  // Bottom bar
-  renderBottom(used, funds);
+function saveCalcState(){
+  var state = {
+    funds: calcFunds,
+    tiers: stockTiers,
+    selected: selectedCalcStocks
+  };
+  localStorage.setItem('ipo_calc_state', JSON.stringify(state));
 }
-
-function renderBottom(used, funds){
-  var ta = used.A/1e4, tb = used.B/1e4, tc = used.C/1e4;
-  var overA = used.A > funds.A, overB = used.B > funds.B, overC = used.C > funds.C;
-  var anyOver = overA || overB || overC;
-
-  // Create or update bottom bar
-  var bar = document.getElementById('bottomBar');
-  if(!bar){
-    bar = document.createElement('div');
-    bar.id = 'bottomBar';
-    bar.className = 'bottom-bar';
-    document.body.appendChild(bar);
-  }
-  var html = '<div class="totals">';
-  ['A','B','C'].forEach(function(acc){
-    var over = acc==='A'?overA:acc==='B'?overB:overC;
-    var val = acc==='A'?ta:acc==='B'?tb:tc;
-    html += '<div class="t'+(over?' over':'')+'">';
-    html += '<div class="v">'+acc+' '+val.toFixed(1)+'万</div>';
-    html += '<div class="l">本金'+(funds[acc]/1e4).toFixed(0)+'万</div>';
-    html += '</div>';
-  });
-  html += '</div>';
-  if(anyOver) html += '<div class="warn">⚠️ 超出本金上限</div>';
-  bar.innerHTML = html;
-}
-
-// ==================== ACTIONS ====================
-function onFundChange(acc, val){
-  var st = loadState();
-  st.funds[acc] = parseFloat(val) || 0;
-  saveState(st);
-  render();
-}
-
-function onFilter(k){
-  var st = loadState();
-  st.filter = k;
-  saveState(st);
-  render();
-}
-
-function toggleStock(code){
-  var st = loadState();
-  var idx = st.sel.indexOf(code);
-  if(idx>=0){ st.sel.splice(idx,1); delete st.tiers[code]; }
-  else st.sel.push(code);
-  saveState(st);
-  render();
-}
-
-function pickTier(code, acc, lots, amt){
-  var st = loadState();
-  if(!st.tiers[code]) st.tiers[code] = {};
-  var cur = st.tiers[code][acc];
-  if(cur && cur.lots === lots){ delete st.tiers[code][acc]; }
-  else { st.tiers[code][acc] = {lots:lots, amt:amt}; }
-  if(st.sel.indexOf(code)<0) st.sel.push(code);
-  saveState(st);
-  render();
-}
-
-function showDetail(code){
-  var s = IPO_DATA.find(function(x){return x.code===code;});
-  if(!s) return;
-  var html = '<div class="modal-overlay" onclick="closeModal()"><div class="modal" onclick="event.stopPropagation()">';
-  html += '<button class="close" onclick="closeModal()">✕</button>';
-  html += '<h3>'+s.name+' <code style="color:var(--muted)">'+s.code+'</code></h3>';
-  var rows = [
-    ['招股期', s.subStart+' → '+s.subEnd+' · 上市 '+s.listDate],
-    ['定价', (s.price||'')+' · '+s.lot+'股/手 · 入场费 '+(s.fee||'').toLocaleString()],
-    ['基石', s.cornerstone||'无'],
-    ['保荐人', s.sponsor||'—'],
-    ['机制', (s.mech||'—')+' · 公开手数 '+(s.pubLots||'—')+' · 计息 '+(s.interest||'?')+'日'],
-    ['市值', s.mcap||'—'],
-    ['预期涨幅', s.gain||'—'],
-    ['建议', s.dec||'—']
-  ];
-  if(s.note) rows.push(['备注', s.note]);
-  if(s.ahDisc) rows.push(['A/H折价', (s.ahPrice||'')+' · H折让 '+(s.ahDisc||'')]);
-  rows.forEach(function(r){
-    html += '<div class="row"><span class="dl">'+r[0]+'</span><span class="dv">'+r[1]+'</span></div>';
-  });
-  html += '</div></div>';
-  document.getElementById('modalCtn').innerHTML = html;
-}
-
-function closeModal(){ document.getElementById('modalCtn').innerHTML = ''; }
-
-function resetAll(){
-  if(confirm('确定清除全部选择？')){ localStorage.removeItem('ipo_calc_state'); render(); }
-}
-
-// ==================== CONFLICT ====================
-function buildConflict(){
-  var active = IPO_DATA.filter(function(s){return s.subEnd>=TODAY;});
-  var byEnd = {};
-  active.forEach(function(s){
-    if(!byEnd[s.subEnd]) byEnd[s.subEnd]=[];
-    byEnd[s.subEnd].push(s);
-  });
-  var dates = Object.keys(byEnd).sort();
-  if(dates.length<=1) return '';
-
-  var cur = {dates:[dates[0]],stocks:byEnd[dates[0]].slice()};
-  var groups = [];
-  for(var i=1;i<dates.length;i++){
-    var d = dates[i];
-    var lastD = cur.dates[cur.dates.length-1];
-    if((new Date(d)-new Date(lastD))/864e5 <= 2){
-      cur.dates.push(d);
-      cur.stocks = cur.stocks.concat(byEnd[d]);
-    } else {
-      if(cur.stocks.length>=2) groups.push(cur);
-      cur = {dates:[d],stocks:byEnd[d].slice()};
-    }
-  }
-  if(cur.stocks.length>=2) groups.push(cur);
-  if(!groups.length) return '';
-
-  var g = groups[0];
-  var ds = g.dates.map(function(d){return d.slice(5);}).join('和');
-  var lastEnd = new Date(g.dates[g.dates.length-1]);
-  var release = new Date(lastEnd.getTime()+864e5).toISOString().slice(5,10);
-  var nextBatch = dates.find(function(d){return new Date(d)-lastEnd>=864e5*2;});
-  var extra = nextBatch ? ' · '+release+'解冻后可复用'+nextBatch.slice(5)+'截止批次' : '';
-  return '⚠️ '+g.stocks.length+'只新股·截止日相邻('+ds+')·资金冲突'+extra;
-}
+var savedCalcState = loadCalcState();
+let selectedCalcStocks = (savedCalcState && savedCalcState.selected) ? savedCalcState.selected : [];
+let expandedCode = null; // 当前展开档位表的股票（每次只展开一只）
+let stockPriority = {};
+let webhookSettings = JSON.parse(localStorage.getItem('ipo_webhook')||'{}');
+window.addEventListener("beforeunload",function(){saveCalcState()});
+const today = new Date().toISOString().slice(0,10);
 
 // ==================== INIT ====================
-render();
+function render(){
+  document.getElementById('app').innerHTML = renderTab(currentTab);
+  updateTabBar();
+}
+
+function switchTab(tab){
+  currentTab = tab;
+  localStorage.setItem('ipo_tab', tab);
+  // 申购页每次强制从 localStorage 重新加载
+  render();
+  window.scrollTo(0,0);
+}
+
+function updateTabBar(){
+  document.querySelectorAll('.tab-item').forEach(b=>b.classList.remove('active'));
+  const idx = ['list','subs','me'].indexOf(currentTab);
+  if(idx>=0) document.querySelectorAll('.tab-item')[idx].classList.add('active');
+}
+
+// ==================== TAB 1: CALENDAR ====================
+function renderTab(tab){
+  if(tab==='list') return renderListTab();
+  if(tab==='subs') return renderSubsTab();
+  if(tab==='me') return renderMeTab();
+  return '';
+}
+
+function renderCalendarTab(){
+  const active = IPO_DATA.filter(s=>s.subEnd >= today);
+  const subs = JSON.parse(localStorage.getItem('ipo_subs')||'[]');
+  const conflict = findConflicts();
+
+  let html = '<div class="header"><h1>📅 新股日历</h1><span class="update" id="serverStatus" style="cursor:pointer" onclick="refreshFromServer()" title="点击从本地服务刷新">🔄 点击刷新</span></div>';
+
+  // Stats
+  html += `<div class="stat-row">
+    <div class="stat-chip"><div class="v">${active.length}</div><div class="l">招股中</div></div>
+    <div class="stat-chip warn"><div class="v">${conflict.conflictCount||active.length}</div><div class="l">资金冲突</div></div>
+    <div class="stat-chip"><div class="v">${subs.length}</div><div class="l">我的申购</div></div>
+    <div class="stat-chip"><div class="v">${conflict.groups.length}</div><div class="l">批次</div></div>
+  </div>`;
+
+  // Conflict warning
+  conflict.groups.forEach(g=>{
+    html += `<div class="conflict-bar">
+      <strong>⚠️ ${g.stocks.length}只新股·相邻${g.span}天</strong><br>
+      ${g.dates} 资金冲突，不能重复使用
+      ${g.nextDate?`<br><span style="color:var(--green)">✅ ${g.releaseDate}资金解冻后，可接着打${g.nextDate}</span>`:''}
+    </div>`;
+  });
+
+  // View toggle
+  html += `<div class="flex-row" style="margin-bottom:10px">
+    <div class="toggle-wrap">
+      <button class="toggle-btn ${calViewMode==='month'?'active':''}" onclick="calViewMode='month';render()">📅 月历</button>
+      <button class="toggle-btn ${calViewMode==='gantt'?'active':''}" onclick="calViewMode='gantt';render()">📊 甘特图</button>
+    </div>
+    <span style="flex:1"></span>
+    <button class="btn btn-sm" onclick="switchTab('list')">🧮 计算器</button>
+  </div>`;
+
+  if(calViewMode==='month'){
+    html += renderMonthCalendar();
+    html += renderDayDetail();
+  } else {
+    html += renderGanttChart();
+  }
+  return html;
+}
+
+function renderMonthCalendar(){
+  const y = calMonth.getFullYear(), m = calMonth.getMonth();
+  const firstDay = new Date(y,m,1).getDay();
+  const daysInMonth = new Date(y,m+1,0).getDate();
+  const prevDays = new Date(y,m,0).getDate();
+
+  const events = {}; // day -> [{code, name, type: 'sub'|'end'|'list'|'dark'}]
+  IPO_DATA.forEach(s=>{
+    const ss = new Date(s.subStart), se = new Date(s.subEnd), ld = new Date(s.listDate);
+    // Only show if in current month
+    const days = [];
+    for(let d=new Date(ss);d<=ld;d.setDate(d.getDate()+1)){
+      if(d.getMonth()===m) days.push(d.getDate());
+    }
+    days.forEach(d=>{
+      if(!events[d]) events[d]=[];
+      const isSub = s.subStart.slice(8)==String(d).padStart(2,'0');
+      const isEnd = s.subEnd.slice(8)==String(d).padStart(2,'0');
+      const isList = s.listDate.slice(8)==String(d).padStart(2,'0');
+      const label = (isList?'首·':isEnd?'止·':isSub?'招·':'')+s.name.slice(0,4);
+      const cls = isList?'evt-list':isEnd?'evt-end':isSub?'evt-sub':'evt-dark';
+      events[d].push({code:s.code,name:s.name,label,cls,isList,isEnd,isSub});
+    });
+  });
+
+  let html = '<div class="card">';
+  html += `<div class="month-header">
+    <button class="btn btn-sm" onclick="calMonth.setMonth(calMonth.getMonth()-1);render()">◀</button>
+    <h2>${y}年${m+1}月</h2>
+    <button class="btn btn-sm" onclick="calMonth.setMonth(calMonth.getMonth()+1);render()">▶</button>
+  </div>`;
+  html += '<div class="month-grid">';
+  ['日','一','二','三','四','五','六'].forEach(d=>html+=`<div class="day-hdr">${d}</div>`);
+
+  // Previous month padding
+  for(let i=firstDay-1;i>=0;i--){
+    html+=`<div class="day" style="opacity:0.3"><div class="dn">${prevDays-i}</div></div>`;
+  }
+  // Current month
+  for(let d=1;d<=daysInMonth;d++){
+    const ds = `${y}-${String(m+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
+    const isToday = ds === today;
+    const evts = events[d]||[];
+    html+=`<div class="day${isToday?' today':''}" onclick="selectedDay='${ds}';render()">
+      <div class="dn">${d}</div>`;
+    evts.slice(0,3).forEach(e=>html+=`<div class="evt ${e.cls}" title="${e.name}">${e.label}</div>`);
+    if(evts.length>3) html+=`<div style="font-size:0.6em;color:var(--muted)">+${evts.length-3}</div>`;
+    html+='</div>';
+  }
+  // Next month padding
+  const remaining = 7 - ((firstDay+daysInMonth)%7||7);
+  if(remaining<7) for(let d=1;d<=remaining;d++) html+=`<div class="day" style="opacity:0.3"><div class="dn">${d}</div></div>`;
+
+  html+='</div></div>';
+  return html;
+}
+
+function renderDayDetail(){
+  const dayStocks = IPO_DATA.filter(s=>{
+    return s.subStart <= selectedDay && s.listDate >= selectedDay;
+  });
+  if(!dayStocks.length) return '<div class="card" style="text-align:center;color:var(--muted)">当天无新股事件</div>';
+
+  const events = dayStocks.map(s=>{
+    const isList = s.listDate===selectedDay, isEnd = s.subEnd===selectedDay, isSub = s.subStart===selectedDay;
+    let status = isList?'🎉 上市':isEnd?'⏰ 截止':'📋 招股中';
+    let statusCls = isList?'b-done':isEnd?'b-wait':'b-sub';
+    return {...s, status, statusCls, isList, isEnd, isSub};
+  });
+
+  let html = `<div class="card"><h3>📌 ${selectedDay} 事项</h3>`;
+  // Separate listing events
+  const listings = events.filter(e=>e.isList);
+  const others = events.filter(e=>!e.isList);
+  if(listings.length){
+    html += '<div style="color:var(--gold);margin-bottom:8px">🎉 今日挂牌</div>';
+    listings.forEach(e=>html+=renderStockEventRow(e));
+  }
+  if(others.length){
+    if(listings.length) html+='<div style="color:var(--muted);margin:8px 0">📋 招股中</div>';
+    others.forEach(e=>html+=renderStockEventRow(e));
+  }
+  html+='</div>';
+  return html;
+}
+
+function renderStockEventRow(s){
+  const typeIcon = s.type==='ah'?'🔷':s.type==='inst'?'⭐':s.type==='zhuang'?'🦄':'';
+  const isClosed = s.subEnd < today;
+  return `<div class="stock-row" style="${isClosed?'background:rgba(240,192,64,0.15);':''}" onclick="showDetail('${s.code}')">
+    <span class="badge ${s.statusCls}">${s.status}</span>
+    ${typeIcon} <strong>${s.name}</strong> <code style="color:var(--muted)">${s.code}</code>
+    <span class="badge b-mech">${s.mech||''}</span>
+    <span style="flex:1"></span>
+    <span style="font-size:0.78em;color:var(--muted)">${s.lot}股/手·${s.fee.toLocaleString()} HKD·${s.pubLots?((s.pubLots/1000).toFixed(0)+'K手'):''}·计息${s.interest||'?'}日</span>
+  </div>`;
+}
+
+// 港股节假日（2026年）
+const HK_HOLIDAYS = new Set([
+  '2026-01-01','2026-02-17','2026-02-18','2026-02-19',
+  '2026-04-03','2026-04-04','2026-04-06',
+  '2026-05-01','2026-05-25',
+  '2026-06-15',
+  '2026-07-01',
+  '2026-09-25',
+  '2026-10-01','2026-10-19',
+  '2026-12-25','2026-12-26',
+]);
+function parseYMD(d){ const p=d.split('-'); return new Date(+p[0],+p[1]-1,+p[2]); }
+function formatYMD(dt){ return dt.getFullYear()+'-'+String(dt.getMonth()+1).padStart(2,'0')+'-'+String(dt.getDate()).padStart(2,'0'); }
+function isHKHoliday(d){ return HK_HOLIDAYS.has(d) || parseYMD(d).getDay()%6===0; }
+function nextBizDay(d){
+  let nd=parseYMD(d); nd.setDate(nd.getDate()+1);
+  while(isHKHoliday(formatYMD(nd))) nd.setDate(nd.getDate()+1);
+  return formatYMD(nd);
+}
+function prevBizDay(d){
+  let nd=parseYMD(d); nd.setDate(nd.getDate()-1);
+  while(isHKHoliday(formatYMD(nd))) nd.setDate(nd.getDate()-1);
+  return formatYMD(nd);
+}
+
+function renderGanttChart(){
+  const stocks = IPO_DATA.filter(s=>s.subEnd>=today);
+  if(!stocks.length) return '';
+  let minD=stocks[0].subStart, maxD=stocks[0].listDate;
+  stocks.forEach(s=>{ if(s.subStart<minD) minD=s.subStart; if(s.listDate>maxD) maxD=s.listDate; });
+  const dates=[];
+  let d=new Date(minD+'T00:00:00');
+  const endD=new Date(maxD+'T00:00:00'); endD.setDate(endD.getDate()+2);
+  while(d<=endD){ dates.push(d.toISOString().slice(0,10)); d.setDate(d.getDate()+1); }
+  const dateIdx={}; dates.forEach((dt,i)=>{ dateIdx[dt]=i; });
+
+  let html = '<div class="card"><h3>📊 时间线</h3>';
+  html += '<div style="display:flex;gap:12px;margin-bottom:6px;font-size:0.68em">';
+  html += '<span><span style="display:inline-block;width:10px;height:10px;background:#e74c3c;border-radius:2px"></span> 申购期</span>';
+  html += '<span><span style="display:inline-block;width:10px;height:10px;background:#f0c040;border-radius:2px"></span> 公布中签</span>';
+  html += '<span><span style="display:inline-block;width:10px;height:10px;background:#a371f7;border-radius:2px"></span> 暗盘</span>';
+  html += '<span><span style="display:inline-block;width:10px;height:10px;background:var(--gold);border-radius:2px"></span> 上市</span>';
+  html += '</div>';
+
+  html += '<div style="overflow-x:auto;font-size:0.62em;line-height:1.2">';
+  // 日期表头
+  html += '<div style="display:flex;margin-bottom:3px">';
+  html += '<span style="width:100px;flex-shrink:0"></span>';
+  let lastMonth='';
+  dates.forEach(dt=>{
+    const m=dt.slice(5,7), day=dt.slice(8,10);
+    const isHol=isHKHoliday(dt);
+    if(m!==lastMonth){ html+='<span style="width:24px;text-align:center;color:var(--accent);font-weight:700">'+(parseInt(m))+'/'+day+'</span>'; lastMonth=m; }
+    else html+='<span style="width:24px;text-align:center;color:'+(isHol?'#555':'var(--muted)')+'">'+day+'</span>';
+  });
+  html+='</div>';
+
+  stocks.forEach(s=>{
+    const allotD=nextBizDay(s.subEnd);
+    const greyD=prevBizDay(s.listDate);
+    html+='<div style="display:flex;align-items:center;margin:1px 0;height:22px">';
+    html+='<span style="width:100px;flex-shrink:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-size:1.05em" title="'+s.name+'">'+s.name.slice(0,7)+' <code style="font-size:0.7em">'+s.code+'</code></span>';
+    dates.forEach(dt=>{
+      let bg='', txt='', tip='';
+      const isHol=isHKHoliday(dt);
+      if(dt===s.subEnd){
+        bg='rgba(231,76,60,'+(isHol?'0.15':'0.35')+')'; txt='┃'; tip='截止'+(isHol?'(假日)':'');
+      } else if(dt>=s.subStart && dt<s.subEnd && !isHol){
+        bg='rgba(231,76,60,0.3)';
+      } else if(dt===allotD){
+        bg='rgba(240,192,64,0.3)'; txt='中'; tip='公布中签';
+      } else if(dt===greyD){
+        bg='rgba(163,113,247,0.3)'; txt='暗'; tip='暗盘';
+      } else if(dt===s.listDate){
+        bg='rgba(240,192,64,0.25)'; txt='★'; tip='上市';
+      }
+      html+='<span style="width:24px;height:20px;display:inline-flex;align-items:center;justify-content:center;background:'+bg+';font-size:0.85em;'+(bg?'':'color:transparent')+'" title="'+(tip||dt)+'">'+txt+'</span>';
+    });
+    html+='</div>';
+  });
+  html+='</div></div>';
+  return html;
+}
+
+const GROUP_COLORS = ['#58a6ff','#f0883e','#3fb950','#f0c040','#db61a2','#56d4dd','#f85149','#a371f7'];
+function findConflicts(){
+  const active = IPO_DATA.filter(s=>s.subEnd>=today);
+  // 按截止日排序，相邻截止日差距≥2天即新组
+  active.sort((a,b)=>a.subEnd.localeCompare(b.subEnd));
+  const groups = [];
+  let cur = null;
+  active.forEach(s=>{
+    if(!cur){
+      cur = {stocks:[s], latestEnd:s.subEnd};
+    } else {
+      const lastEnd = new Date(cur.latestEnd);
+      const sEnd = new Date(s.subEnd);
+      const gapDays = Math.round((sEnd - lastEnd)/(1000*86400));
+      if(gapDays <= 1){
+        cur.stocks.push(s);
+        if(s.subEnd > cur.latestEnd) cur.latestEnd = s.subEnd;
+      } else {
+        groups.push(cur);
+        cur = {stocks:[s], latestEnd:s.subEnd};
+      }
+    }
+  });
+  if(cur) groups.push(cur);
+  // 过滤掉只有1只的组
+  const multiGroups = groups.filter(g=>g.stocks.length>1);
+  // 分配颜色并打标记
+  IPO_DATA.forEach(s=>{ s._groupId = -1; s._groupColor = ''; });
+  multiGroups.forEach((g,gi)=>{
+    g.color = GROUP_COLORS[gi % GROUP_COLORS.length];
+    g.stocks.forEach(s=>{ s._groupId = gi; s._groupColor = g.color; });
+  });
+  // 格式化
+  groups.forEach(g=>{
+    g.label = g.stocks.map(s=>s.subEnd.slice(5)).join('·');
+  });
+  return {groups: multiGroups, allGroups: groups};
+}
+
+// ==================== 近期事项 ====================
+function renderUpcomingEvents(){
+  var conflicts=findConflicts();
+  var html='<div class="card" style="font-size:0.82em">';
+  // 冲突提醒
+  if(conflicts.groups.length>0){
+    conflicts.groups.forEach(function(g){
+      html+='<div class="conflict-bar"><strong>⚠️ '+g.stocks.length+'只新股·相邻'+(g.span+1)+'天</strong> '+g.dates+' 资金冲突';
+      if(g.releaseDate) html+='<br><span style="color:var(--green)">✅ '+g.releaseDate+'解冻后可复用</span>';
+      html+='</div>';
+    });
+  }
+  // 未来7天的截止和上市事件
+  html+='<div style="overflow-x:auto"><table class="tbl" style="font-size:0.78em"><thead><tr><th>日期</th><th>事件</th><th>股票</th><th>详情</th></tr></thead><tbody>';
+  var events={};
+  IPO_DATA.forEach(function(s){
+    var se=s.subEnd, ld=s.listDate;
+    if(se>=today){
+      if(!events[se]) events[se]=[];
+      events[se].push({code:s.code,name:s.name,type:'⏰截止',detail:(s.mech||'')+' · '+s.lot+'股/手 · '+s.fee.toLocaleString()+' HKD'});
+    }
+    if(ld>=today){
+      if(!events[ld]) events[ld]=[];
+      events[ld].push({code:s.code,name:s.name,type:'🎉上市',detail:(s.mech||'')});
+    }
+  });
+  var dates=Object.keys(events).sort();
+  dates.forEach(function(d){
+    events[d].forEach(function(e){
+      html+='<tr><td>'+d.slice(5)+'</td><td>'+e.type+'</td><td><strong>'+e.name+'</strong> <code>'+e.code+'</code></td><td>'+e.detail+'</td></tr>';
+    });
+  });
+  html+='</tbody></table></div></div>';
+  return html;
+}
+
+// ==================== TAB 1: 选股下单 ====================
+
+function renderListTab(){
+  let data = IPO_DATA.filter(function(s){return s.subEnd >= today;});
+
+  let html = '<div class="header"><h1>📊 选股下单</h1><span class="update">'+data.length+'只</span></div>';
+
+  // 甘特图
+  try{ html += renderGanttChart(); }catch(e){}
+
+  // 操作按钮
+  html += '<div class="flex-row" style="margin-bottom:8px">';
+  html += '<button class="btn btn-sm btn-pri" onclick="saveAllToSubscriptions()">💾 全部保存到申购</button>';
+  html += '<button class="btn btn-sm" onclick="refreshFromServer()">🔄 更新数据</button></div>';
+
+  // 决策面板
+  try{ html += '<div class="card" id="decisionPanel"><h3 style="margin-bottom:10px">📋 决策面板</h3>'+renderDecisionPanel()+'</div>'; }catch(e){}
+
+  // 账户资金 + 剩余本金（合并卡片）
+  {
+    // 可用 = 账户现金 + 持仓×0.7
+    const frozenFunds = getFrozenFunds();
+    const stockHolding = getStockHolding();
+    let remA=calcFunds.A+stockHolding.A*0.7, remB=calcFunds.B+stockHolding.B*0.7, remC=calcFunds.C+stockHolding.C*0.7;
+    html += '<div class="card" id="totalsCard"><h3>💰 账户现金与可用</h3>';
+    html += '<div class="form-row">';
+    html += '<div class="form-group"><label>A 现金 (HKD)</label><div style="display:flex;align-items:center;gap:4px"><span id="fundDispA" style="font-size:1.05em;font-weight:700;min-width:70px">'+(calcFunds.A/1e4).toFixed(2)+'万</span><button class="btn btn-sm" onclick="editFund(this.dataset.acc)" data-acc="A" title="校正现金" style="font-size:0.6em;padding:1px 5px">✎</button></div><div style="display:flex;gap:4px;margin-top:4px"><input type="number" id="depAmtA" placeholder="金额" style="width:70px;padding:2px 4px;font-size:0.7em"><button class="btn btn-sm" onclick="deposit(this.dataset.acc)" data-acc="A" style="font-size:0.65em;padding:2px 6px">+入金</button><button class="btn btn-sm" onclick="withdraw(this.dataset.acc)" data-acc="A" style="font-size:0.65em;padding:2px 6px;color:var(--orange)">-出金</button></div></div>';
+    html += '<div class="form-group"><label>B 现金 (HKD)</label><div style="display:flex;align-items:center;gap:4px"><span id="fundDispB" style="font-size:1.05em;font-weight:700;min-width:70px">'+(calcFunds.B/1e4).toFixed(2)+'万</span><button class="btn btn-sm" onclick="editFund(this.dataset.acc)" data-acc="B" title="校正现金" style="font-size:0.6em;padding:1px 5px">✎</button></div><div style="display:flex;gap:4px;margin-top:4px"><input type="number" id="depAmtB" placeholder="金额" style="width:70px;padding:2px 4px;font-size:0.7em"><button class="btn btn-sm" onclick="deposit(this.dataset.acc)" data-acc="B" style="font-size:0.65em;padding:2px 6px">+入金</button><button class="btn btn-sm" onclick="withdraw(this.dataset.acc)" data-acc="B" style="font-size:0.65em;padding:2px 6px;color:var(--orange)">-出金</button></div></div>';
+    html += '<div class="form-group"><label>C 现金 (HKD)</label><div style="display:flex;align-items:center;gap:4px"><span id="fundDispC" style="font-size:1.05em;font-weight:700;min-width:70px">'+(calcFunds.C/1e4).toFixed(2)+'万</span><button class="btn btn-sm" onclick="editFund(this.dataset.acc)" data-acc="C" title="校正现金" style="font-size:0.6em;padding:1px 5px">✎</button></div><div style="display:flex;gap:4px;margin-top:4px"><input type="number" id="depAmtC" placeholder="金额" style="width:70px;padding:2px 4px;font-size:0.7em"><button class="btn btn-sm" onclick="deposit(this.dataset.acc)" data-acc="C" style="font-size:0.65em;padding:2px 6px">+入金</button><button class="btn btn-sm" onclick="withdraw(this.dataset.acc)" data-acc="C" style="font-size:0.65em;padding:2px 6px;color:var(--orange)">-出金</button></div></div>';
+    html += '</div>';
+    html += '<div class="stat-row">';
+    html += '<div class="stat-chip"><div class="v" id="totalValA" style="color:'+(remA<0?'var(--red)':'var(--green)')+'">'+(remA/1e4).toFixed(2)+'万</div><div class="l">A 可用'+tiedLabel(frozenFunds.A,stockHolding.A,' (')+')'+'</div></div>';
+    html += '<div class="stat-chip"><div class="v" id="totalValB" style="color:'+(remB<0?'var(--red)':'var(--green)')+'">'+(remB/1e4).toFixed(2)+'万</div><div class="l">B 可用'+tiedLabel(frozenFunds.B,stockHolding.B,' (')+')'+'</div></div>';
+    html += '<div class="stat-chip"><div class="v" id="totalValC" style="color:'+(remC<0?'var(--red)':'var(--green)')+'">'+(remC/1e4).toFixed(2)+'万</div><div class="l">C 可用'+tiedLabel(frozenFunds.C,stockHolding.C,' (')+')'+'</div></div>';
+    html += '</div>';
+    html += '<div class="stat-row">'+
+      '<div class="stat-chip"><div class="v" style="color:var(--accent)">'+((calcFunds.A+(stockHolding.A||0))/1e4).toFixed(2)+'万</div><div class="l">A 总资产</div></div>'+
+      '<div class="stat-chip"><div class="v" style="color:var(--accent)">'+((calcFunds.B+(stockHolding.B||0))/1e4).toFixed(2)+'万</div><div class="l">B 总资产</div></div>'+
+      '<div class="stat-chip"><div class="v" style="color:var(--accent)">'+((calcFunds.C+(stockHolding.C||0))/1e4).toFixed(2)+'万</div><div class="l">C 总资产</div></div>'+
+    '</div>';
+    html += '<p id="overBudgetWarn" style="color:var(--red);font-size:0.8em;margin-left:8px;display:'+(remA<0||remB<0||remC<0?'block':'none')+'">⚠️ 超出本金上限</p>';
+    html += '</div>';
+  }
+
+  // 预计算总融资额（用于表头显示）
+  let _totalFin=0;
+  data.forEach(function(si){
+    var mv=(si.margin||'').toString();
+    if(mv&&mv!=='—'&&!isNaN(parseFloat(mv))&&parseFloat(mv)>0){
+      _totalFin+=parseFloat(mv)*(si.pubLots||0)*si.fee;
+    }
+  });
+
+  // 股票表格
+  html += '<div class="card" style="padding:0;overflow-x:auto"><table class="tbl"><thead><tr><th>选</th><th>代码</th><th>名称</th><th>机制</th><th>入场费</th><th>截止</th><th>上市</th><th>公开手数</th><th>基石</th><th>孖展</th><th>融资额</th><th id="totalFinAmt" style="color:var(--accent)">'+(selectedCalcStocks.length>0?'总融资额\n'+(_totalFin>0?(_totalFin/1e8).toFixed(1)+'亿':'—'):'总融资额')+'</th><th>A</th><th>B</th><th>C</th></tr></thead><tbody>';
+  data.forEach(function(s){
+    var sel = selectedCalcStocks.includes(s.code);
+    var expanded = expandedCode===s.code;
+    var cur = stockTiers[s.code]||{};
+    var getLabel=function(acc){
+      var t=cur[acc];
+      if(!t) return '—';
+      var label=t.label+' '+t.lots+'手';
+      var r=getAllocRate(s.code, t.lots, s.fee);
+      if(r>0){
+        var el2=t.lots*r;
+        label+=' <span style=\"font-size:0.85em;color:var(--gold)\">→'+el2.toFixed(1)+'手</span>';
+      }
+      return label;
+    };
+
+    html += '<tr style="'+(sel?'background:rgba(88,166,255,0.06)':'')+'">';
+    html += '<td><div onclick="event.stopPropagation();toggleCalcStock(\''+s.code+'\')" style="cursor:pointer;font-size:1.2em">'+(sel?'☑':'☐')+'</div><span onclick="event.stopPropagation();showDetail(\''+s.code+'\')" style="cursor:pointer;font-size:0.6em;color:var(--muted)" title="详情">ℹ️</span></td>';
+    html += '<td><code style="cursor:pointer" onclick="event.stopPropagation();toggleCalcStock(\''+s.code+'\')">'+s.code+'</code></td>';
+    html += '<td><strong style="cursor:pointer" onclick="event.stopPropagation();toggleCalcStock(\''+s.code+'\')">'+s.name+'</strong>';
+    if(s.type==='ah' && s.ahDisc){
+      var discVal=parseFloat(s.ahDisc)||0;
+      var discColor=discVal<=-30?'var(--red)':discVal<=-10?'var(--orange)':'var(--green)';
+      var liveTag=ahLiveData[s.ahCode]?' <span style="font-size:0.6em;color:var(--gold)">● LIVE</span>':'';
+      html+='<br><span style="font-size:0.72em;font-weight:700;color:'+discColor+'">AH折价 '+s.ahDisc+'</span>';
+      if(ahLiveData[s.ahCode]) html+=' <span style="font-size:0.65em;color:var(--muted)">A股 '+ahLiveData[s.ahCode].price.toFixed(2)+liveTag+'</span>';
+    }
+    html += '</td>';
+    html += '<td><span class="badge b-mech">'+(s.mech||'—')+'</span></td>';
+    html += '<td class="num">'+s.fee.toLocaleString()+'</td>';
+    html += '<td style="color:var(--red)">'+s.subEnd.slice(5)+'</td>';
+    html += '<td>'+s.listDate.slice(5)+'</td>';
+    html += '<td class="num" style="font-size:0.75em">'+((s.pubLots||0)/1000).toFixed(0)+'K</td>';
+    html += '<td style="font-size:0.7em;max-width:100px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="'+(s.cornerstone||'')+'">'+(s.cornerstone||'—')+'</td>';
+    var marginVal=s.margin||'';
+    var marginDisplay=(marginVal==='—'||marginVal==='')?'':marginVal;
+    html += '<td><input value="'+marginDisplay+'" placeholder="x" style="width:44px;padding:2px 0;font-size:0.78em;text-align:center;border:0;outline:0;background:0;color:var(--accent);font-weight:600;-webkit-appearance:none;appearance:none;text-decoration:none;box-shadow:none" onclick="event.stopPropagation()" onkeydown="if(event.key===\'Enter\'){updateMargin(\''+s.code+'\',this.value);this.blur()}" onchange="updateMargin(\''+s.code+'\',this.value)"></td>';
+    var finAmt=(marginVal&&marginVal!=='—'&&!isNaN(parseFloat(marginVal))&&parseFloat(marginVal)>0)?(parseFloat(marginVal)*(s.pubLots||0)*s.fee):0;
+    html += '<td class="num" id="finAmt-'+s.code+'" style="font-size:0.75em;color:'+(finAmt>0?'var(--accent)':'var(--muted)')+'">'+(finAmt>0?((finAmt/1e8).toFixed(1)+'亿'):'—')+'</td>';
+    ['A','B','C'].forEach(function(acc){
+      html += '<td style="font-size:0.72em;color:'+(cur[acc]?'var(--accent)':'var(--muted)')+'">'+getLabel(acc)+'</td>';
+    });
+    html += '</tr>';
+    // 展开档位表
+    if(expanded){
+      html += '<tr><td colspan="15" style="padding:4px 8px" id="tier-'+s.code+'">';
+      html += renderFullTierTable(s);
+      html += '</td></tr>';
+    }
+  });
+  html += '</tbody></table></div>';
+
+  return html;
+}
+
+function getZhuangProb(s){
+  // 庄股概率：高/中/低
+  if(s.type==='zhuang') return '高';
+  if(s.type==='inst' && s.cs<=2) return '中';
+  if(s.type==='cold') return '低';
+  return '低';
+}
+function getTypeLabel(s){
+  if(s.type==='ah') return 'A+H';
+  if(s.type==='inst') return '机构票';
+  if(s.type==='zhuang') return '庄票';
+  return '冷门';
+}
+function getExpLotsAndReturn(s){
+  // 返回 {lots: 预期中签手数, ret: 预期收益}
+  var tiers=stockTiers[s.code]||{};
+  var totalLots=0, totalRet=0;
+  ['A','B','C'].forEach(function(acc){
+    var t=tiers[acc];
+    if(t && s.margin && !isNaN(parseFloat(s.margin)) && parseFloat(s.margin)>0){
+      var r=getAllocRate(s.code, t.lots, s.fee);
+      totalLots+=t.lots*r;
+      var gain=s.gain||'';
+      var gainPct=0;
+      var gm=gain.match(/[+-]?\d+/g);
+      if(gm && gm.length>=2) gainPct=(parseFloat(gm[0])+parseFloat(gm[1]))/2/100;
+      else if(gm && gm.length>=1) gainPct=parseFloat(gm[0])/100;
+      totalRet+=t.lots*r*s.fee*gainPct;
+    }
+  });
+  return {lots:totalLots, ret:totalRet};
+}
+
+function adjustDecision(s, expData){
+  // 根据预期中签量调整决策
+  var dec=s.dec||'';
+  if(expData.lots<=0) return dec; // 没有孖展数据，保持原决策
+  if(expData.lots<0.5 && dec.indexOf('放弃')<0 && dec.indexOf('妖股')<0){
+    return '中签渺茫→一手/放弃';
+  }
+  if(expData.lots<2 && (dec.indexOf('重仓')>=0 || dec.indexOf('乙头')>=0)){
+    return '中签偏低→降为适度';
+  }
+  return dec;
+}
+
+function getDecisionReason(s){
+  var parts=[];
+  // 类型标签
+  parts.push(getTypeLabel(s));
+  // 庄股概率
+  var zp=getZhuangProb(s);
+  if(zp==='高') parts.push('庄股概率高');
+  else if(zp==='中') parts.push('庄股概率中');
+  // 基石
+  if(s.cs>=5) parts.push('基石'+(s.cornerstone||'').replace(/\([^)]*\)/,'').slice(0,15)+'强');
+  else if(s.cs>=3) parts.push('基石'+(s.cornerstone||'').slice(0,12));
+  else if(s.cs<=1) parts.push('无基石');
+  // 热度
+  if(s.hs>=5) parts.push('赛道极热');
+  else if(s.hs>=3) parts.push('热度中等');
+  else parts.push('赛道偏冷');
+  // 绿鞋
+  parts.push(s.gs?'✅绿鞋':'❌无绿鞋');
+  // 特色
+  var note=s.note||'';
+  if(note.indexOf('18C')>=0) parts.push('18C');
+  // 每手金额
+  if(s.fee>=30000) parts.push('每手'+((s.fee||0)/1e4).toFixed(1)+'万·高价值');
+  else if(s.fee>=10000) parts.push('每手'+(s.fee/1e4).toFixed(1)+'万');
+  // 预期中签
+  var expData=getExpLotsAndReturn(s);
+  if(expData.lots>0){
+    parts.push('中签≈'+expData.lots.toFixed(1)+'手');
+    if(expData.ret>0) parts.push('收益≈'+(expData.ret/1e4).toFixed(1)+'万');
+  }
+  return parts.join('，');
+}
+
+function getDecisionScore(s){
+  var score=0;
+  if(s.cs>=6) score+=12; else if(s.cs>=5) score+=10; else if(s.cs>=4) score+=7; else if(s.cs>=3) score+=4; else if(s.cs>=2) score+=2;
+  if(s.hs>=5) score+=9; else if(s.hs>=4) score+=6; else if(s.hs>=3) score+=3; else if(s.hs>=2) score+=1;
+  if(s.type==='ah' && s.ahDisc){
+    var disc=parseFloat(s.ahDisc)||0;
+    if(disc<=-50) score+=6; else if(disc<=-40) score+=4; else if(disc<=-30) score+=2;
+  }
+  var expData=getExpLotsAndReturn(s);
+  if(expData.lots>0){
+    if(expData.lots>=10) score+=6;
+    else if(expData.lots>=5) score+=4;
+    else if(expData.lots>=2) score+=3;
+    else if(expData.lots>=1) score+=1;
+    else score-=5;
+  }
+  // 每手价值：高入场费=收益放大器，小涨幅也能赚大钱
+  if(s.fee>=30000) score+=4;
+  else if(s.fee>=10000) score+=2;
+  else if(s.fee>=5000) score+=1;
+  return score;
+}
+
+function renderDecisionPanel(){
+  var all=IPO_DATA.filter(function(s){return s.subEnd>=today;});
+  // 按截止日期排序
+  all.sort(function(a,b){return a.subEnd.localeCompare(b.subEnd);});
+  var ahStocks=all.filter(function(s){return s.type==='ah';});
+  var nonAhStocks=all.filter(function(s){return s.type!=='ah';});
+
+  function renderStockLine(s){
+    var parts=[];
+    // 类型标签
+    if(s.type==='ah'){
+      var dv=s.ahDisc?parseFloat(s.ahDisc):0;
+      var dc=dv<=-40?'var(--red)':dv<=-20?'var(--orange)':'var(--green)';
+      var discText=s.ahDisc||'?';
+      parts.push('<span style="background:'+(dv<=-40?'rgba(231,76,60,0.3)':dv<=-20?'rgba(243,156,18,0.3)':'rgba(39,174,96,0.2)')+';color:'+dc+';padding:1px 6px;border-radius:3px;font-size:0.85em;font-weight:700">AH '+discText+'</span>');
+    } else {
+      var tl=s.type==='inst'?'机构':s.type==='zhuang'?'庄票':'冷门';
+      parts.push('<span style="color:var(--muted)">'+tl+'</span>');
+    }
+    // 庄股标记
+    if(getZhuangProb(s)==='高') parts.push('<span style="background:rgba(231,76,60,0.25);color:var(--red);padding:0 5px;border-radius:3px;font-size:0.8em">🦄庄</span>');
+    // 基石
+    if(s.cs>=5) parts.push('基石'+(s.cornerstone||'').replace(/\([^)]*\)/,'').slice(0,12)+'强');
+    else if(s.cs>=3) parts.push('基石'+(s.cornerstone||'').slice(0,10));
+    else if(s.cs<=1) parts.push('<span style="color:var(--muted)">无基石</span>');
+    else parts.push('基石'+s.cs);
+    // 热度
+    if(s.hs>=5) parts.push('<span style="color:var(--red)">极热</span>');
+    else if(s.hs>=3) parts.push('偏热');
+    else if(s.hs>=2) parts.push('中等');
+    else parts.push('<span style="color:var(--muted)">冷</span>');
+    // 绿鞋
+    parts.push(s.gs?'绿鞋':'<span style="color:var(--muted)">无绿鞋</span>');
+    // 每手价值
+    if(s.fee>=30000) parts.push('每手'+(s.fee/1e4).toFixed(1)+'万');
+    else if(s.fee>=10000) parts.push('每手'+(s.fee/1e4).toFixed(1)+'万');
+    // 预期中签/收益
+    var expData=getExpLotsAndReturn(s);
+    if(expData.lots>0){
+      parts.push('中签≈'+expData.lots.toFixed(1)+'手');
+      if(expData.ret>0) parts.push('收益≈'+(expData.ret/1e4).toFixed(1)+'万');
+    }
+    // 截止日期
+    parts.push('<span style="color:var(--muted)">截止'+s.subEnd.slice(5)+'</span>');
+    return parts.join(' · ');
+  }
+
+  var html='<div style="font-size:0.82em;line-height:2">';
+  // AH 股
+  if(ahStocks.length>0){
+    html+='<div style="color:var(--accent);font-weight:700;margin-bottom:4px">🔷 AH 股 ('+ahStocks.length+'只)</div>';
+    ahStocks.forEach(function(s){
+      html+='<div style="margin-bottom:2px"><b>'+s.name+'</b> <code style="font-size:0.75em">'+s.code+'</code> '+renderStockLine(s)+'</div>';
+    });
+  }
+  // 非 AH 股
+  if(nonAhStocks.length>0){
+    html+='<div style="color:var(--gold);font-weight:700;margin-top:10px;margin-bottom:4px">📊 非AH股 ('+nonAhStocks.length+'只)</div>';
+    nonAhStocks.forEach(function(s){
+      html+='<div style="margin-bottom:2px"><b>'+s.name+'</b> <code style="font-size:0.75em">'+s.code+'</code> '+renderStockLine(s)+'</div>';
+    });
+  }
+  if(all.length===0) html+='<div style="color:var(--muted)">暂无招股中的新股</div>';
+  html+='</div>';
+  html+='<div style="margin-top:8px;font-size:0.65em;color:var(--muted)">按截止日期排序 · 填孖展+选档后显示预期中签/收益 · 纯信息列示，不做建议</div>';
+  return html;
+}
+
+// ==================== TAB 3: CALCULATOR ====================
+const AB_GROUP = 5000000;
+const COMMISSION = 50; // 券商佣金 50 HKD
+const MAX_PRINCIPAL = 2000000; // 乙组本金上限200万
+
+// 手动手数覆盖（localStorage读写）
+function getManualLots(code){
+  try{ return JSON.parse(localStorage.getItem('manual_lots_'+code)||'{}'); }catch(e){ return {}; }
+}
+function saveManualLot(code, label, lots){
+  var m = getManualLots(code);
+  if(lots === null || lots === undefined || lots < 0){ delete m[label]; }
+  else { m[label] = lots; }
+  localStorage.setItem('manual_lots_'+code, JSON.stringify(m));
+}
+function resetManualLots(code){
+  localStorage.removeItem('manual_lots_'+code);
+  render(); toast('✅ 手数已重置为自动计算','info');
+}
+
+// 招股书标准申购金额范围（HKD）
+const JIA_BRACKETS = [
+  {min:50000, max:100000, label:'5-10万'},
+  {min:100000, max:200000, label:'10-20万'},
+  {min:200000, max:400000, label:'20-40万'},
+  {min:400000, max:800000, label:'40-80万'},
+  {min:800000, max:1200000, label:'80-120万'},
+  {min:1200000, max:2000000, label:'120-200万'},
+  {min:2000000, max:3000000, label:'200-300万'},
+  {min:3000000, max:4000000, label:'300-400万'},
+  {min:4000000, max:5000000, label:'400-500万(甲尾)'},
+];
+
+const YI_BRACKETS = [
+  {min:5000000, max:7000000, label:'乙头'},
+  {min:7000000, max:10000000, label:'乙二'},
+  {min:10000000, max:15000000, label:'乙三'},
+  {min:15000000, max:20000000, label:'乙四'},
+  {min:20000000, max:30000000, label:'乙五'},
+  {min:30000000, max:40000000, label:'乙六'},
+  {min:40000000, max:60000000, label:'乙七'},
+];
+
+function getFullTiers(fee, maxBudget, code){
+  const manual = getManualLots(code);
+  const stock = IPO_DATA.find(x=>x.code===code)||{};
+  const yiTouLots = Math.ceil(AB_GROUP / fee);
+  const yiTouAmt = yiTouLots * fee;
+
+  // 甲组：优先用股票数据中的 jiaTiers（真实招股书手数数组），否则自动计算
+  const jia = [];
+  if(stock.jiaTiers && Array.isArray(stock.jiaTiers) && stock.jiaTiers.length > 0){
+    // jiaTiers 是手数数组，按顺序对应各档位
+    for(let i=0; i<stock.jiaTiers.length; i++){
+      const b = JIA_BRACKETS[i];
+      if(!b) break;
+      var lots = (manual[b.label] !== undefined) ? manual[b.label] : stock.jiaTiers[i];
+      if(lots < 1) continue;
+      if(lots >= yiTouLots) break;
+      const amt = lots * fee + COMMISSION;
+      if(jia.length > 0 && jia[jia.length-1].lots === lots) continue;
+      jia.push({label: b.label, lots, note: '≤'+(b.max/1e4).toFixed(0)+'万申购', amt, edited: manual[b.label]!==undefined});
+    }
+  } else {
+    for(const b of JIA_BRACKETS){
+      var lots = (manual[b.label] !== undefined) ? manual[b.label] : Math.floor(b.max / fee);
+      if(lots < 1) continue;
+      if(lots >= yiTouLots) break;
+      const amt = lots * fee + COMMISSION;
+      if(jia.length > 0 && jia[jia.length-1].lots === lots) continue;
+      jia.push({label: b.label, lots, note: '≤'+(b.max/1e4).toFixed(0)+'万申购', amt, edited: manual[b.label]!==undefined});
+    }
+  }
+  // 确保有甲尾
+  const jiaTailLots = Math.floor((AB_GROUP - 1) / fee);
+  if(jiaTailLots > 0 && jiaTailLots < yiTouLots && !jia.find(t=>t.lots===jiaTailLots)){
+    var ml = (manual['甲尾'] !== undefined) ? manual['甲尾'] : jiaTailLots;
+    jia.push({label:'甲尾', lots:ml, note:'≈'+(jiaTailLots*fee/1e4).toFixed(0)+'万', amt: ml*fee+COMMISSION, edited: manual['甲尾']!==undefined});
+  }
+
+  // 乙组：优先用股票数据中的 yiTiers（真实招股书申购金额万），否则用 YI_BRACKETS
+  const yi = [];
+  let prevLots = 0;
+  const yiSource = (stock.yiTiers && Array.isArray(stock.yiTiers) && stock.yiTiers.length > 0) ? stock.yiTiers : null;
+  if(yiSource){
+    // yiTiers 是申购金额数组（万），如 [500, 600, 700, 800, 1000]
+    const yiLabels = ['乙头','乙二','乙三','乙四','乙五','乙六','乙七','乙八','乙九','乙十'];
+    for(let i=0; i<yiSource.length; i++){
+      const amtWan = yiSource[i];
+      const principal = (amtWan * 1e4) / 10;
+      if(principal > MAX_PRINCIPAL) break;
+      var lots = Math.ceil(amtWan * 1e4 / fee);
+      if(lots <= prevLots) continue;
+      if(lots < yiTouLots) continue;
+      const label = yiLabels[i] || ('乙'+(i+1));
+      // 手动覆盖
+      if(manual[label] !== undefined) lots = manual[label];
+      const amt = lots * fee + COMMISSION;
+      yi.push({label, lots, note:'≈'+amtWan+'万', amt, edited: manual[label]!==undefined});
+      prevLots = lots;
+    }
+  } else {
+    // 无真实招股书档位数据：不计算假档位，只显示乙头基准参考
+    const jiaTailLots2 = Math.floor((AB_GROUP - 1) / fee);
+    if(jiaTailLots2 > 0){
+      yi.push({label:'乙头(参考)', lots: yiTouLots, note:'⚠️ 缺招股书档位·仅乙头基准', amt: yiTouLots*fee+COMMISSION, edited: false});
+    }
+  }
+
+  const isDefault = !localStorage.getItem('yi_tiers_'+code);
+  return {jia, yi, yiTouLots, yiTouAmt, isDefault};
+}
+
+function renderCalcTab(){
+  let html = '<div class="header"><h1>🧮 打新计算器</h1></div>';
+
+  html += '<div class="card"><h3>💰 账户资金 (10x杠杆,自动保存)</h3>';
+  html += '<div class="form-row">';
+  html += '<div class="form-group"><label>账户A (HKD)</label><div style="display:flex;align-items:center;gap:4px"><span id="fundDispA" style="font-size:1em;font-weight:700;min-width:70px">'+(calcFunds.A/1e4).toFixed(2)+'万</span><button class="btn btn-sm" onclick="editFund(this.dataset.acc)" data-acc="A" title="校正现金" style="font-size:0.6em;padding:1px 5px">✎</button></div></div>';
+  html += '<div class="form-group"><label>账户B (HKD)</label><div style="display:flex;align-items:center;gap:4px"><span id="fundDispB" style="font-size:1em;font-weight:700;min-width:70px">'+(calcFunds.B/1e4).toFixed(2)+'万</span><button class="btn btn-sm" onclick="editFund(this.dataset.acc)" data-acc="B" title="校正现金" style="font-size:0.6em;padding:1px 5px">✎</button></div></div>';
+  html += '<div class="form-group"><label>账户C (HKD)</label><div style="display:flex;align-items:center;gap:4px"><span id="fundDispC" style="font-size:1em;font-weight:700;min-width:70px">'+(calcFunds.C/1e4).toFixed(2)+'万</span><button class="btn btn-sm" onclick="editFund(this.dataset.acc)" data-acc="C" title="校正现金" style="font-size:0.6em;padding:1px 5px">✎</button></div></div>';
+  html += '</div>';
+  html += '<div style="font-size:0.7em;color:var(--muted);margin-bottom:8px">修改后按回车或点击其他地方即自动保存</div>';
+  html += '<div style="display:flex;justify-content:space-between;align-items:center"><button class="btn btn-pri btn-sm" onclick="saveAllToSubscriptions()">💾 全部保存到申购</button></div>';
+  html += '</div>';
+
+  html += '<div class="card"><h3>选择股票 <span style="color:var(--muted);font-size:0.8em">(勾选后选档位)</span></h3>';
+
+  const active = IPO_DATA.filter(s=>s.subEnd>=today).sort((a,b)=>a.subEnd.localeCompare(b.subEnd));
+  active.forEach(s=>{
+    const sel = selectedCalcStocks.includes(s.code);
+    const expanded = expandedCode===s.code;
+    html += `<div class="calc-stock${sel?' selected':''}" onclick="toggleCalcStock('${s.code}')" id="cs-${s.code}">
+      <div class="cb">${sel?'✓':''}</div>
+      <div class="info"><div class="name">${s.name} <code style="color:var(--muted)">${s.code}</code></div>
+        <div class="meta">截止${s.subEnd.slice(5)} · ${s.lot}股/手 · ${s.fee.toLocaleString()} HKD · <span class="badge b-mech">${s.mech||''}</span></div></div>
+    </div>`;
+    if(expanded) html += renderFullTierTable(s);
+  });
+  html += '</div>';
+
+  // 合计（3账户分列，显示所需本金）
+  if(selectedCalcStocks.length>0){
+    const fundA=calcFunds.A;
+    const fundB=calcFunds.B;
+    const fundC=calcFunds.C;
+    let totals={A:0,B:0,C:0};
+    selectedCalcStocks.forEach(function(code){
+      var ts=getTierAmounts(code);
+      ['A','B','C'].forEach(function(acc){ totals[acc]+=ts[acc]; });
+    });
+    html += '<div class=\"card\"><h3>📊 所需本金合计 (10x杠杆后上限: A='+(fundA/1e4).toFixed(0)+'万 B='+(fundB/1e4).toFixed(0)+'万 C='+(fundC/1e4).toFixed(0)+'万)</h3>';
+    html += '<div class=\"stat-row\">';
+    html += '<div class=\"stat-chip\"><div class=\"v\" id=\"total_A\" style=\"color:'+(totals.A>fundA?'var(--red)':'var(--accent)')+'\">'+(totals.A/1e4).toFixed(1)+'万</div><div class=\"l\">账户A ('+(fundA/1e4).toFixed(0)+'万)</div></div>';
+    html += '<div class=\"stat-chip\"><div class=\"v\" id=\"total_B\" style=\"color:'+(totals.B>fundB?'var(--red)':'var(--accent)')+'\">'+(totals.B/1e4).toFixed(1)+'万</div><div class=\"l\">账户B ('+(fundB/1e4).toFixed(0)+'万)</div></div>';
+    html += '<div class=\"stat-chip\"><div class=\"v\" id=\"total_C\" style=\"color:'+(totals.C>fundC?'var(--red)':'var(--accent)')+'\">'+(totals.C/1e4).toFixed(1)+'万</div><div class=\"l\">账户C ('+(fundC/1e4).toFixed(0)+'万)</div></div>';
+    html += '</div>';
+    if(totals.A>fundA||totals.B>fundB||totals.C>fundC) html+='<p style=\"color:var(--red);font-size:0.8em\">⚠️ 超出本金上限</p>';
+    html += '</div>';
+  }
+
+  return html;
+}
+
+const ACCOUNTS = ['账户A','账户B','账户C'];
+let stockTiers = (savedCalcState && savedCalcState.tiers) ? savedCalcState.tiers : {}; // {code: {A: {label,lots}, B: {label,lots}, C: {label,lots}}}
+
+function renderFullTierTable(s){
+  const fee = s.fee;
+  const fundA=calcFunds.A;
+  const fundB=calcFunds.B;
+  const fundC=calcFunds.C;
+  const funds={A:fundA,B:fundB,C:fundC};
+  const used={A:0,B:0,C:0};
+  selectedCalcStocks.forEach(function(code){
+    var ts=getTierAmounts(code);
+    ['A','B','C'].forEach(function(acc){ used[acc]+=ts[acc]; });
+  });
+  var cur=stockTiers[s.code]||{};
+  var html='<div style="display:flex;justify-content:space-between;align-items:center;margin-left:28px;margin-bottom:4px"><span style="font-size:0.78em;color:var(--muted)">📋 档位选择</span><button class="btn btn-sm btn-danger" onclick="event.stopPropagation();removeCalcStock(\''+s.code+'\')" style="font-size:0.7em;padding:2px 6px">✕ 移除</button></div>';
+  html += '<div style="margin-left:28px;margin-bottom:10px;overflow-x:auto">';
+  // 甲/乙组平均中签率
+  var jiaRate=getAllocRate(s.code, 1, s.fee); // 1手一定在甲组
+  var yiRate=getAllocRate(s.code, Math.ceil(AB_GROUP/s.fee), s.fee); // 乙头手数
+  if(jiaRate>0 || yiRate>0){
+    html+='<div style="margin-bottom:6px;font-size:0.75em">';
+    if(jiaRate>0) html+='<span style="color:var(--accent)">📊 甲组中签率 <b>'+(jiaRate*100).toFixed(2)+'%</b></span>';
+    if(jiaRate>0 && yiRate>0) html+=' &nbsp;|&nbsp; ';
+    if(yiRate>0) html+='<span style="color:var(--gold)">乙组中签率 <b>'+(yiRate*100).toFixed(2)+'%</b></span>';
+    html+='</div>';
+  }
+  html+='<table class="tbl" style="font-size:0.72em"><thead><tr><th>申购手数</th><th>申购金额</th><th>需本金</th>';
+  ['A','B','C'].forEach(function(acc){ html+='<th>'+acc+' <span style="font-weight:normal;font-size:0.8em">余'+((funds[acc]-used[acc])/1e4).toFixed(0)+'万</span></th>'; });
+  html+='</tr></thead><tbody>';
+
+  if(s.allLots && s.allLots.length > 0){
+    // Use actual prospectus data
+    s.allLots.forEach(function(p){
+
+      var cash=p.amt/10;
+      var rowRate=getAllocRate(s.code, p.lots, s.fee);
+      var row='<tr>';
+      row+='<td class="num">'+p.lots.toLocaleString()+'</td>';
+      row+='<td class="num">'+(p.amt/1e4).toFixed(0)+'万</td>';
+      row+='<td class="num">'+(cash/1e4).toFixed(1)+'万</td>';
+      ['A','B','C'].forEach(function(acc){
+        var c=cur[acc]||{};
+        var act=c.lots===p.lots;
+        var remain=funds[acc]-used[acc];
+        var over=cash>remain && !act;
+        var btnLabel;
+        if(act && rowRate>0){
+          var el2=p.lots*rowRate;
+          btnLabel='✓ →'+el2.toFixed(1)+'手';
+        } else if(act){
+          btnLabel='✓';
+        } else if(over){
+          btnLabel='超';
+        } else if(rowRate>0){
+          var el3=p.lots*rowRate;
+          btnLabel='选('+el3.toFixed(1)+'手)';
+        } else {
+          btnLabel='选';
+        }
+        row+='<td><button class="btn btn-sm'+(act?' btn-pri':'')+(over?' btn-danger':'')+'" onclick="pickTier(\''+s.code+'\',\''+acc+'\',\'p'+p.lots+'\','+p.lots+')"'+(over?' disabled':'')+'>'+btnLabel+'</button></td>';
+      });
+      row+='</tr>';
+      html+=row;
+    });
+  } else {
+    // Fallback: calculated tiers
+    var tiers=getFullTiers(fee, 1e12, s.code);
+    var allTiers = tiers.jia.concat(tiers.yi);
+    allTiers.forEach(function(t){ if((t.lots*fee+COMMISSION)/10<=MAX_PRINCIPAL) html+=addTierRow(s, t, fee, cur, funds, used); });
+  }
+  html+='</tbody></table>';
+  // 预计中签行（按每档实际甲/乙组分别计算）
+  var hasAnySel=false;
+  ['A','B','C'].forEach(function(acc){ if(cur[acc]) hasAnySel=true; });
+  if(hasAnySel && (s.margin||'').toString().length>0 && !isNaN(parseFloat(s.margin)) && parseFloat(s.margin)>0){
+    html+='<div style="margin-top:6px;padding:6px 10px;background:rgba(88,166,255,0.06);border-radius:6px;font-size:0.75em">';
+    html+='<span style="color:var(--muted)">🎯 预计中签：</span> ';
+    var parts=[];
+    ['A','B','C'].forEach(function(acc){
+      var c=cur[acc];
+      if(c){
+        var r=getAllocRate(s.code, c.lots, s.fee);
+        var el=Math.max(c.lots*r, 0.01);
+        var ea=el*s.fee;
+        var group=c.lots*s.fee>=AB_GROUP?'乙':'甲';
+        parts.push('<b style="color:var(--accent)">'+acc+'</b> '+el.toFixed(1)+'手 ≈'+(ea/1e4).toFixed(1)+'万 <span style=\"font-size:0.85em;color:var(--muted)\">('+group+'组 '+(r*100).toFixed(2)+'%)</span>');
+      }
+    });
+    html+=parts.join(' &nbsp;|&nbsp; ');
+    html+='</div>';
+  }
+  html+='</div>';
+  return html;
+}
+
+function getAllocRate(code, lots, fee){
+  // 返回中签率 (decimal)。甲组 vs 乙组分别计算。
+  // lots * fee = 申购金额，≥500万为乙组，<500万为甲组
+  var s=IPO_DATA.find(function(x){return x.code===code;});
+  if(!s) return 0;
+  var mv=(s.margin||'').toString();
+  if(mv==='—'||mv===''||isNaN(parseFloat(mv))||parseFloat(mv)<=0) return 0;
+  var m=parseFloat(mv);
+  var totalRaise=(s.pubLots||0)*s.fee;
+  var totalSub=m*totalRaise;
+  var amt=(lots||0)*(fee||s.fee);
+  var isYi=amt>=AB_GROUP; // AB_GROUP=5000000
+  var raiseShare=totalRaise*0.5;
+  var subShare=isYi?totalSub*0.75:totalSub*0.25;
+  if(subShare<=0) return 0;
+  var rate=raiseShare/subShare;
+  if(s.mech==='18C') rate=rate*4;
+  return Math.min(rate, 1);
+}
+
+function getTierAmounts(code){
+  const s=IPO_DATA.find(function(x){return x.code===code;});
+  const tiers=stockTiers[code]||{};
+  const r={A:0,B:0,C:0};
+  // 返回所需本金（总申购额/10）
+  ['A','B','C'].forEach(function(acc){ const t=tiers[acc]; if(t) r[acc]=(t.lots*s.fee+COMMISSION)/10; });
+  return r;
+}
+
+function renderEditableLot(code, label, lots, edited){
+  return '<span class="lot-cell" onclick="editLotCell(this,\''+code+'\',\''+label+'\')" title="点击修改手数"'+(edited?' style="border-bottom:2px dashed var(--gold);cursor:pointer"':' style="cursor:pointer"')+'>'+lots.toLocaleString()+'</span>';
+}
+
+function editLotCell(el, code, label){
+  var cur = el.textContent.replace(/,/g,'');
+  el.innerHTML = '<input type="number" value="'+cur+'" min="0" style="width:60px;padding:2px 4px;font-size:0.8em;text-align:center;background:var(--bg);color:var(--text);border:1px solid var(--accent);border-radius:4px" onblur="commitLotEdit(this,\''+code+'\',\''+label+'\')" onkeydown="if(event.key===\'Enter\')this.blur()" onclick="event.stopPropagation()">';
+  el.querySelector('input').focus();
+  el.querySelector('input').select();
+}
+function commitLotEdit(input, code, label){
+  var v = parseInt(input.value);
+  if(isNaN(v) || v < 0) v = 0;
+  saveManualLot(code, label, v);
+  // 在弹窗中则刷新弹窗，否则刷新整个页面
+  if(document.getElementById('modalOverlay').style.display==='flex'){
+    showDetail(code);
+  } else {
+    render();
+  }
+}
+function addTierRow(s, t, fee, cur, funds, used){
+  var amt=t.lots*fee+COMMISSION;
+  var cash=amt/10;
+  var rowRate=getAllocRate(s.code, t.lots, fee);
+  var row='<tr>';
+  row+='<td class="num">'+renderEditableLot(s.code, t.label, t.lots, t.edited)+'</td>';
+  row+='<td class="num">'+(amt/1e4).toFixed(0)+'万</td>';
+  row+='<td class="num">'+(cash/1e4).toFixed(1)+'万</td>';
+  ['A','B','C'].forEach(function(acc){
+    var c=cur[acc]||{};
+    var act=c.label===t.label;
+    var remain=funds[acc]-used[acc];
+    var over=cash>remain && !act;
+    var btnLabel;
+    if(act && rowRate>0){
+      btnLabel='✓ →'+(t.lots*rowRate).toFixed(1)+'手';
+    } else if(act){
+      btnLabel='✓';
+    } else if(over){
+      btnLabel='超';
+    } else if(rowRate>0){
+      btnLabel='选('+(t.lots*rowRate).toFixed(1)+'手)';
+    } else {
+      btnLabel='选';
+    }
+    row+='<td><button class="btn btn-sm'+(act?' btn-pri':'')+(over?' btn-danger':'')+'" data-code="'+s.code+'" data-acc="'+acc+'" data-label="'+t.label+'" data-lots="'+t.lots+'" onclick="selTier(this)"'+(over?' disabled':'')+'>'+btnLabel+'</button></td>';
+  });
+  row+='</tr>';
+  return row;
+}
+
+function pickTier(code,acc,label,lots){
+  var s=IPO_DATA.find(function(x){return x.code===code;});
+  if(!stockTiers[code]) stockTiers[code]={};
+  // 点击已选中的档位 → 取消选择
+  var cur=stockTiers[code][acc];
+  if(cur && cur.label===label){
+    delete stockTiers[code][acc];
+    if(Object.keys(stockTiers[code]).length===0) delete stockTiers[code];
+  } else {
+    stockTiers[code][acc]={label:label,lots:lots,fee:s.fee};
+    if(selectedCalcStocks.indexOf(code)<0) selectedCalcStocks.push(code);
+  }
+  saveCalcState();
+  // 就地更新该股票的档位表、底部合计和决策面板，不整页刷新
+  updateTierTable(code);
+  updateTotalsDisplay();
+  var dp=document.getElementById('decisionPanel');
+  if(dp) dp.innerHTML=renderDecisionPanel();
+}
+function selTier(btn){
+  pickTier(btn.getAttribute('data-code'),btn.getAttribute('data-acc'),btn.getAttribute('data-label'),parseInt(btn.getAttribute('data-lots')));
+}
+
+function toggleCalcStock(code){
+  if(expandedCode===code){
+    expandedCode=null; // 仅收起，不取消勾选
+  } else {
+    expandedCode=code;
+    if(selectedCalcStocks.indexOf(code)<0) selectedCalcStocks.push(code);
+  }
+  saveCalcState();
+  render();
+}
+function removeCalcStock(code){
+  const idx=selectedCalcStocks.indexOf(code);
+  if(idx>=0) selectedCalcStocks.splice(idx,1);
+  if(expandedCode===code) expandedCode=null;
+  saveCalcState();
+  render();
+}
+
+function updateTierTable(code){
+  var el=document.getElementById('tier-'+code);
+  if(!el) return;
+  var s=IPO_DATA.find(function(x){return x.code===code;});
+  if(!s) return;
+  el.innerHTML = renderFullTierTable(s);
+}
+function renderExpectedSummary(){
+  var parts=[];
+  ['A','B','C'].forEach(function(acc){
+    var totalLots=0, totalAmt=0;
+    selectedCalcStocks.forEach(function(code){
+      var s=IPO_DATA.find(function(x){return x.code===code;});
+      var tiers=stockTiers[code]||{};
+      var t=tiers[acc];
+      if(t && s){
+        var rate=getAllocRate(code, t.lots, s.fee);
+        if(rate>0){
+          totalLots+=t.lots*rate;
+          totalAmt+=t.lots*rate*s.fee;
+        }
+      }
+    });
+    if(totalLots>0){
+      parts.push('<b style=\"color:var(--accent)\">'+acc+'</b> '+totalLots.toFixed(1)+'手 ≈'+(totalAmt/1e4).toFixed(1)+'万');
+    }
+  });
+  return parts.length>0 ? parts.join(' &nbsp;|&nbsp; ') : '<span style=\"color:var(--muted)\">填写孖展倍数后自动计算</span>';
+}
+
+
+
+function deposit(acc){
+  var amt=parseFloat(document.getElementById('depAmt'+acc).value)||0;
+  if(!amt){ toast('请输入金额','error'); return; }
+  calcFunds[acc]+=amt;
+  saveCalcState();
+  document.getElementById('fund'+acc).value=calcFunds[acc];
+  document.getElementById('depAmt'+acc).value='';
+  updateListRemaining();
+  toast('账户'+acc+' 入金 '+amt.toLocaleString()+' HKD','success');
+}
+function withdraw(acc){
+  var amt=parseFloat(document.getElementById('depAmt'+acc).value)||0;
+  if(!amt){ toast('请输入金额','error'); return; }
+  calcFunds[acc]-=amt;
+  saveCalcState();
+  document.getElementById('fund'+acc).value=calcFunds[acc];
+  document.getElementById('depAmt'+acc).value='';
+  updateListRemaining();
+  toast('账户'+acc+' 出金 '+amt.toLocaleString()+' HKD','success');
+}
+
+function editFund(el){
+  var acc = typeof el === 'string' ? el : el.dataset.acc;
+  var cur = calcFunds[acc];
+  var input = prompt('校正账户'+acc+' 现金 (HKD)：', Math.round(cur));
+  if (input !== null) {
+    var v = parseFloat(input);
+    if (!isNaN(v)) {
+      calcFunds[acc] = v;
+      saveCalcState();
+      updateFundDisplay(acc);
+      updateListRemaining();
+    }
+  }
+}
+function updateFundDisplay(acc){
+  var el = document.getElementById('fundDisp'+acc);
+  if (el) el.textContent = (calcFunds[acc]/1e4).toFixed(2)+'万';
+}
+function updateListFund(acc, val){
+  calcFunds[acc] = parseFloat(val)||0;
+  saveCalcState();
+  updateListRemaining();
+}
+function updateListRemaining(){
+  const f=getFrozenFunds(), h=getStockHolding();
+  ['A','B','C'].forEach(function(acc){
+    const el = document.getElementById('totalVal'+acc);
+    if(!el) return;
+    const fund = calcFunds[acc] || 0;
+    const rem = fund + h[acc]*0.7;
+    el.textContent = (rem/1e4).toFixed(2)+'万';
+    el.style.color = rem < 0 ? 'var(--red)' : 'var(--green)';
+  });
+  const warnEl = document.getElementById('overBudgetWarn');
+  if(warnEl){
+    const hasOver = ['A','B','C'].some(function(k){
+      const fund = calcFunds[k] || 0;
+      return fund + h[k]*0.7 < 0;
+    });
+    warnEl.style.display = hasOver ? 'block' : 'none';
+  }
+}
+
+function updateTotalsDisplay(){
+  var totals={A:0,B:0,C:0};
+  selectedCalcStocks.forEach(function(code){
+    var ts=getTierAmounts(code);
+    totals.A+=ts.A; totals.B+=ts.B; totals.C+=ts.C;
+  });
+  ['A','B','C'].forEach(function(acc){
+    var el=document.getElementById('totalVal'+acc);
+    if(el){
+      var fund=acc==='A'?calcFunds.A:acc==='B'?calcFunds.B:calcFunds.C;
+      var rem=fund-totals[acc];
+      el.textContent=(rem/1e4).toFixed(2)+'万';
+      el.style.color=rem<0?'var(--red)':'var(--green)';
+    }
+  });
+  // 更新超出警告
+  var warnEl=document.getElementById('overBudgetWarn');
+  if(warnEl){
+    var hasOver=totals.A>calcFunds.A||totals.B>calcFunds.B||totals.C>calcFunds.C;
+    warnEl.style.display=hasOver?'block':'none';
+  }
+  // 更新表头总融资额
+  var finEl=document.getElementById('totalFinAmt');
+  if(finEl){
+    var tfa=0;
+    IPO_DATA.filter(function(s){return s.subEnd>=today;}).forEach(function(si){
+      var mv=(si.margin||'').toString();
+      if(mv&&mv!=='—'&&!isNaN(parseFloat(mv))&&parseFloat(mv)>0){
+        tfa+=parseFloat(mv)*(si.pubLots||0)*si.fee;
+      }
+    });
+    finEl.textContent='总融资额\n'+(tfa>0?(tfa/1e8).toFixed(1)+'亿':'—');
+  }
+  // 更新每只已选股票在列表中的账户标签
+  selectedCalcStocks.forEach(function(code){
+    updateStockRowLabels(code);
+  });
+}
+function updateStockRowLabels(code){
+  var cur=stockTiers[code]||{};
+  var s=IPO_DATA.find(function(x){return x.code===code;});
+  var getLabel=function(acc){
+    var t=cur[acc];
+    if(!t) return '—';
+    var label=t.label+' '+t.lots+'手';
+    var r=s?getAllocRate(code, t.lots, s.fee):0;
+    if(r>0){
+      var el=t.lots*r;
+      label+=' <span style=\"font-size:0.85em;color:var(--gold)\">→'+el.toFixed(1)+'手</span>';
+    }
+    return label;
+  };
+  // 更新主表格中该股票行的 A/B/C 列（通过遍历所有单元格找对应行）
+  var table=document.querySelector('.tbl');
+  if(!table) return;
+  var rows=table.querySelectorAll('tr');
+  for(var i=0;i<rows.length;i++){
+    var row=rows[i];
+    var codeCell=row.querySelector('code');
+    if(codeCell && codeCell.textContent===code){
+      var cells=row.querySelectorAll('td');
+      // 单元格分布: 选 | 代码 | 名称 | 机制 | 入场费 | 截止 | 上市 | 公开手数 | 基石 | 孖展 | A | B | C
+      // A=倒数第三个，B=倒数第二个，C=最后一个
+      if(cells.length>=3){
+        cells[cells.length-3].innerHTML='<span style="font-size:0.72em;color:'+(cur['A']?'var(--accent)':'var(--muted)')+'">'+getLabel('A')+'</span>';
+        cells[cells.length-2].innerHTML='<span style="font-size:0.72em;color:'+(cur['B']?'var(--accent)':'var(--muted)')+'">'+getLabel('B')+'</span>';
+        cells[cells.length-1].innerHTML='<span style="font-size:0.72em;color:'+(cur['C']?'var(--accent)':'var(--muted)')+'">'+getLabel('C')+'</span>';
+      }
+      break;
+    }
+  }
+}
+
+let calcFunds=(savedCalcState && savedCalcState.funds) ? savedCalcState.funds : {A:500000,B:500000,C:500000};
+function calcTierChanged(){
+  calcFunds.A = parseFloat(document.getElementById('fundA').value)||0;
+  calcFunds.B = parseFloat(document.getElementById('fundB').value)||0;
+  calcFunds.C = parseFloat(document.getElementById('fundC').value)||0;
+  saveCalcState();
+  updateTotalsDisplay();
+}
+function updateFund(acc, val){
+  calcFunds[acc] = parseFloat(val)||0;
+  saveCalcState();
+  // Update summary only, don't re-render the whole page
+  updateSummary();
+}
+function updateSummary(){
+  if(selectedCalcStocks.length===0) return;
+  var fundA=calcFunds.A, fundB=calcFunds.B, fundC=calcFunds.C;
+  var totals={A:0,B:0,C:0};
+  selectedCalcStocks.forEach(function(code){
+    var ts=getTierAmounts(code);
+    ['A','B','C'].forEach(function(acc){ totals[acc]+=ts[acc]; });
+  });
+  // Update the summary cells
+  ['A','B','C'].forEach(function(acc){
+    var el=document.getElementById('total_'+acc);
+    if(el){
+      var fund=acc==='A'?fundA:acc==='B'?fundB:fundC;
+      el.innerHTML = totals[acc]/1e4 > fund ? '<span style="color:var(--red)">⚠️超预算</span>' : '<span style="color:var(--accent)">'+(totals[acc]/1e4).toFixed(1)+'万</span>';
+    }
+  });
+}
+
+// 编辑某只股票的乙组档位
+function editYiTiers(code){
+  const s = IPO_DATA.find(x=>x.code===code);
+  const key = 'yi_tiers_'+code;
+  let current;
+  try{current=JSON.parse(localStorage.getItem(key)||'null');}catch(e){}
+  // 优先用 localStorage 自定义值，其次用股票数据中的真实 yiTiers，都没有则为空（需用户从招股书填入）
+  if(!current||!current.length){
+    if(s.yiTiers && Array.isArray(s.yiTiers) && s.yiTiers.length>0){
+      current = s.yiTiers;
+    } else {
+      current = [];
+    }
+  }
+  var hasData = current.length > 0;
+  document.getElementById('modalContent').innerHTML = `
+    <button class="modal-close" onclick="closeModal()" style="float:right;background:none;border:none;color:var(--muted);font-size:1.3em;cursor:pointer">✕</button>
+    <h3>✏️ 编辑乙组档位 — ${s.name} (${s.code})</h3>
+    <p style="color:${hasData?'var(--muted)':'var(--orange)'};font-size:0.78em;margin-bottom:8px">${hasData?'✅ 已从招股书加载档位数据':'⚠️ 请从招股书填入乙组各档金额（万HKD），用逗号分隔。如：500, 700, 1000, 1500, 2000'}</p>
+    <p style="color:var(--muted);font-size:0.72em">入场费 ${s.fee.toLocaleString()} HKD · 乙头≈${Math.ceil(5000000/s.fee)}手 ≈${(Math.ceil(5000000/s.fee)*s.fee/1e4).toFixed(0)}万</p>
+    <textarea id="yiAmtsInput" style="height:80px;font-family:monospace;font-size:0.85em" placeholder="${hasData?'':'例如: 500, 700, 1000, 1500'}">${current.join(', ')}</textarea>
+    <div style="margin-top:10px;display:flex;gap:8px">
+      <button class="btn btn-pri" onclick="saveYiTiers('${code}')">💾 保存</button>
+      <button class="btn" onclick="closeModal();render()">取消</button>
+    </div>`;
+  document.getElementById('modalOverlay').style.display='flex';
+}
+function saveYiTiers(code){
+  const raw = document.getElementById('yiAmtsInput').value;
+  const arr = raw.split(/[,，\s]+/).map(Number).filter(n=>!isNaN(n)&&n>0);
+  if(arr.length===0){ toast('请输入有效金额','error'); return; }
+  arr.sort((a,b)=>a-b);
+  localStorage.setItem('yi_tiers_'+code, JSON.stringify(arr));
+  closeModal(); render(); toast('✅ 乙组档位已更新','success');
+}
+
+// 一键保存到申购（增量更新，不覆盖申购页面已做的修改）
+function saveAllToSubscriptions(){
+  let subs = JSON.parse(localStorage.getItem('ipo_subs')||'[]');
+  let added = 0, updated = 0;
+  const selectedKeys = new Set();
+
+  selectedCalcStocks.forEach(function(code){
+    const s=IPO_DATA.find(function(x){return x.code===code;});
+    const tiers=stockTiers[code]||{};
+    ['A','B','C'].forEach(function(acc){
+      const t=tiers[acc]; if(!t) return;
+      const accName='账户'+acc;
+      const frozen=t.lots*s.fee+COMMISSION;
+      const tierLabel = t.lots+'手 ('+(t.lots*s.fee/1e4).toFixed(0)+'万)';
+      selectedKeys.add(code+'_'+accName);
+
+      // 查找同股票+同账户的已有记录
+      const existing = subs.find(function(x){
+        return x.code===code && x.account===accName;
+      });
+
+      if(existing){
+        // 更新档位/金额，调整冻结差额（退款旧冻结，扣除新冻结）
+        var oldFrozSub=existing.frozen;
+        existing.tier = tierLabel;
+        existing.lots = t.lots;
+        existing.amount = t.lots*s.fee;
+        existing.frozen = frozen;
+        existing.fee = s.fee;
+        existing.lot = s.lot;
+        existing.subEnd = s.subEnd;
+        existing.listDate = s.listDate;
+        calcFunds[acc] += oldFrozSub - frozen;
+        updated++;
+      } else {
+        // 新建：申购扣减冻结金
+        calcFunds[acc] -= frozen;
+        subs.push({
+          id: Date.now().toString()+'_'+code+'_'+acc,
+          code, name:s.name, type:s.type,
+          account: accName,
+          tier: tierLabel, lots: t.lots,
+          amount: t.lots*s.fee,
+          frozen,
+          subEnd: s.subEnd, listDate: s.listDate,
+          fee: s.fee, lot: s.lot,
+          sellPrice:null, sellDate:null
+        });
+        added++;
+      }
+    });
+  });
+
+  // 删除不再选中的记录（但保护有中签或已卖出的），退款被删记录的冻结金
+  let deletedKeys = new Set(JSON.parse(localStorage.getItem('ipo_subs_deleted')||'[]'));
+  subs = subs.filter(function(x){
+    const key = x.code+'_'+x.account;
+    if(deletedKeys.has(key) && selectedKeys.has(key)){
+      deletedKeys.delete(key);
+    }
+    if(deletedKeys.has(key)) return false;
+    if(x.sellPrice) return true;
+    if(x.alot!=null) return true;
+    if(selectedKeys.has(key)) return true;
+    // 不在选中列表中 → 删除，退还冻结金
+    const accK=x.account==='账户A'?'A':x.account==='账户B'?'B':'C';
+    calcFunds[accK] += x.frozen;
+    return false;
+  });
+  localStorage.setItem('ipo_subs_deleted',JSON.stringify([...deletedKeys]));
+
+  localStorage.setItem('ipo_subs',JSON.stringify(subs));
+  // 保存后清空计算器选择，避免与申购记录重复计算
+  selectedCalcStocks = [];
+  saveCalcState();
+  const savedNames = [...new Set(subs.filter(x=>!x.sellPrice).map(x=>x.name))];
+  switchTab('subs');
+  toast('✅ 新增 '+added+' 条, 更新 '+updated+' 条 ('+savedNames.length+'只)：'+savedNames.join('、'),'success');
+}
+
+// ==================== TAB 4: SUBSCRIPTIONS ====================
+let editId = null;
+
+let hiddenSubs = new Set(JSON.parse(localStorage.getItem('ipo_subs_hidden')||'[]'));
+function toggleHideSub(id){
+  if(hiddenSubs.has(id)) hiddenSubs.delete(id); else hiddenSubs.add(id);
+  localStorage.setItem('ipo_subs_hidden',JSON.stringify([...hiddenSubs]));
+  render();
+}
+function toggleSoldSection(){
+  const key = 'ipo_sold_expanded';
+  const current = localStorage.getItem(key) === '1';
+  localStorage.setItem(key, current ? '0' : '1');
+  render();
+}
+
+// 暂存编辑：{id: {alot, sellPrice, sellDate}}
+let pendingEdits = {};
+function hasPending(){ return Object.keys(pendingEdits).length>0; }
+function getEff(s, field){
+  if(pendingEdits[s.id]&&pendingEdits[s.id][field]!==undefined) return pendingEdits[s.id][field];
+  return s[field];
+}
+function setPending(id, field, value){
+  if(!pendingEdits[id]) pendingEdits[id]={};
+  var subs2=JSON.parse(localStorage.getItem('ipo_subs')||'[]');
+  var s2=subs2.find(function(x){return x.id===id;});
+  if(!s2){ pendingEdits[id][field]=value; return; }
+  var accKey2=s2.account==='账户A'?'A':s2.account==='账户B'?'B':'C';
+  // 中签变更 → 退款 = 冻结金额 - 实际成本（中签0=全额退款）
+  if(field==='alot'){
+    var oldAlotEff=getEff(s2,'alot');
+    var newAlot=value;
+    var oldCost=(oldAlotEff!=null)?(oldAlotEff===0?0:oldAlotEff*s2.fee+COMMISSION):s2.frozen;
+    var newCost=(newAlot!=null)?(newAlot===0?0:newAlot*s2.fee+COMMISSION):s2.frozen;
+    calcFunds[accKey2] += oldCost - newCost;
+    saveCalcState();
+    updateListRemaining();
+  }
+  // 卖出价变更 → 实时同步账户资金（卖出回款）
+  if(field==='sellPrice'){
+    var oldEff=getEff(s2,'sellPrice');
+    var newPrice=value;
+    var lots2=getEff(s2,'alot')||s2.lots;
+    if(oldEff&&newPrice){calcFunds[accKey2]+=(newPrice-oldEff)*lots2*s2.lot;}
+    else if(!oldEff&&newPrice){calcFunds[accKey2]+=newPrice*lots2*s2.lot;}
+    else if(oldEff&&!newPrice){calcFunds[accKey2]-=oldEff*lots2*s2.lot;}
+    saveCalcState();
+    updateListRemaining();
+  }
+  pendingEdits[id][field]=value;
+}
+
+function updateCurPriceAndShow(el){var id=el.dataset.id;var price=parseFloat(el.value)||0;updateCurPrice(id,price);var span=el.parentNode.querySelector('span.mv');if(span){var lots=parseInt(el.dataset.lots)||0;var lot=parseInt(el.dataset.lot)||0;span.textContent=price?((price*lots*lot)/1e4).toFixed(2)+'万':'—';}updateListRemaining();}
+function updateCurPrice(id, price){
+  let subs=JSON.parse(localStorage.getItem('ipo_subs')||'[]');
+  subs=subs.map(s=>s.id===id?{...s,curPrice:price||undefined}:s);
+  localStorage.setItem('ipo_subs',JSON.stringify(subs));
+}
+
+function saveAllPending(){
+  if(!hasPending()){ toast('没有需要保存的更改','info'); return; }
+  let subs=JSON.parse(localStorage.getItem('ipo_subs')||'[]');
+  Object.keys(pendingEdits).forEach(id=>{
+    const edits=pendingEdits[id];
+    const oldSub=subs.find(s=>s.id===id);
+    subs=subs.map(s=>s.id===id?{...s,...edits}:s);
+    // 中签为0 → 删除
+    if(edits.alot===0) subs=subs.filter(s=>s.id!==id);
+  });
+  localStorage.setItem('ipo_subs',JSON.stringify(subs));
+  localStorage.setItem('ipo_subs_hidden',JSON.stringify([...hiddenSubs]));
+  pendingEdits={};
+  render(); toast('✅ 已保存','success');
+}
+function discardPending(){
+  if(!hasPending()) return;
+  if(!confirm('确定放弃未保存的更改？')) return;
+  pendingEdits={};
+  render(); toast('已放弃更改','info');
+}
+
+// 冻结资金：申购已扣款但中签结果未知（待开奖）
+function getFrozenFunds(){
+  const frozen={A:0,B:0,C:0};
+  const subs=JSON.parse(localStorage.getItem('ipo_subs')||'[]');
+  subs.forEach(s=>{
+    if(getEff(s,'sellPrice')) return;
+    if(getEff(s,'alot')!=null) return; // 中签已知 → 划入持仓
+    const k=s.account==='账户A'?'A':s.account==='账户B'?'B':s.account==='账户C'?'C':null;
+    if(!k) return;
+    frozen[k]+=s.frozen;
+  });
+  return frozen;
+}
+// 股票市值：已中签未卖出（持仓成本）
+function getStockHolding(){
+  const holding={A:0,B:0,C:0};
+  const subs=JSON.parse(localStorage.getItem('ipo_subs')||'[]');
+  subs.forEach(s=>{
+    if(getEff(s,'sellPrice')) return;
+    const effAlot=getEff(s,'alot');
+    if(!effAlot) return; // 未中签或无数据 → 不计入
+    const k=s.account==='账户A'?'A':s.account==='账户B'?'B':s.account==='账户C'?'C':null;
+    if(!k) return;
+    holding[k]+=(s.curPrice?s.curPrice*effAlot*s.lot:effAlot*s.fee+COMMISSION);
+  });
+  return holding;
+}
+// 兼容旧调用：冻结+持仓合计（已卖出不计入）
+function getSubsFrozen(){
+  const f=getFrozenFunds(), h=getStockHolding();
+  return {A:f.A+h.A, B:f.B+h.B, C:f.C+h.C};
+}
+// 获取各账户已卖出总回款（卖出价×中签手数×每手股数）
+function getSoldProceeds(){
+  const proceeds={A:0,B:0,C:0};
+  const subs=JSON.parse(localStorage.getItem('ipo_subs')||'[]');
+  subs.forEach(s=>{
+    const effSell=getEff(s,'sellPrice');
+    if(!effSell) return;
+    const k=s.account==='账户A'?'A':s.account==='账户B'?'B':s.account==='账户C'?'C':null;
+    if(!k) return;
+    const price=effSell;
+    const lots=getEff(s,'alot')||s.lots;
+    proceeds[k]+=price*lots*s.lot;
+  });
+  return proceeds;
+}
+
+function tiedLabel(frozen, holding, prefix){
+  if(frozen<=0 && holding<=0) return '';
+  var parts = [];
+  if(frozen>0) parts.push('冻结'+(frozen/1e4).toFixed(2)+'万');
+  if(holding>0) parts.push('持仓'+(holding/1e4).toFixed(2)+'万');
+  return (prefix||'')+parts.join('+');
+}
+
+
+function getCurrentPrices(){
+  try { return JSON.parse(localStorage.getItem('ipo_prices')||'{}'); } catch(e){ return {}; }
+}
+function setCurrentPrice(code, price){
+  var p=getCurrentPrices();
+  if(price) p[code]=price; else delete p[code];
+  localStorage.setItem('ipo_prices',JSON.stringify(p));
+}
+
+function renderSubsTab(){
+  const subs = JSON.parse(localStorage.getItem('ipo_subs')||'[]');
+  const accOrder={'账户A':0,'账户B':1,'账户C':2};
+  // 排序：有中签优先 → 账户 → 截止日
+  const hasAlot=r=>r.alot!=null&&r.alot>0;
+  subs.sort((a,b)=>(hasAlot(b)?1:0)-(hasAlot(a)?1:0)||(accOrder[a.account]??9)-(accOrder[b.account]??9)||a.subEnd.localeCompare(b.subEnd));
+  const uniqueNames = [...new Set(subs.map(s=>s.name))];
+
+  let html = '<div class="header"><h1>📝 我的申购</h1><div style="display:flex;gap:6px">';
+  html+='<button class="btn" onclick="showBackfill()" style="font-size:0.78em">📋 补录</button>';
+  if(hasPending()) html+='<button class="btn btn-pri" onclick="saveAllPending()">💾 保存 ('+Object.keys(pendingEdits).length+'条)</button>';
+  else html+='<button class="btn btn-pri" onclick="saveAllPending()">💾 保存</button>';
+  html+='</div></div>';
+
+  // 各账户可用资金（顶部）—— 可用=账户现金+持仓×0.7
+  const frozenFunds2 = getFrozenFunds();
+  const stockHolding2 = getStockHolding();
+  const accFrozen = {A:frozenFunds2.A+stockHolding2.A, B:frozenFunds2.B+stockHolding2.B, C:frozenFunds2.C+stockHolding2.C};
+  // 叠加暂存编辑的冻结变化（统一/10单位）
+  Object.keys(pendingEdits).forEach(id=>{
+    const edits=pendingEdits[id];
+    if(edits.alot===undefined) return;
+    const s=subs.find(x=>x.id===id); if(!s) return;
+    const k=s.account==='账户A'?'A':s.account==='账户B'?'B':s.account==='账户C'?'C':null;
+    if(!k) return;
+    const oldAlot=s.alot;
+    const oldCost=(oldAlot!=null)?(oldAlot===0?0:oldAlot*s.fee+COMMISSION):s.frozen;
+    const newAlot=edits.alot;
+    const newCost=(newAlot!=null)?(newAlot===0?0:newAlot*s.fee+COMMISSION):s.frozen;
+    accFrozen[k] += newCost - oldCost;
+  });
+  html+='<div class="stat-row">'+
+    ['A','B','C'].map(k=>{
+      const fund=calcFunds[k]||0, rem=fund+stockHolding2[k]*0.7;
+      const color=rem<0?'var(--red)':'var(--accent)';
+      return '<div class="stat-chip"><div class="v" style="color:'+color+';font-size:1em">'+(rem/1e4).toFixed(2)+'万</div><div class="l">账户'+k+'可用 (总额'+(fund/1e4).toFixed(0)+'万'+tiedLabel(frozenFunds2[k],stockHolding2[k],'·')+')</div></div>';
+    }).join('')+
+  '</div>';
+
+	  // 各账户盈亏统计
+	  if(subs.length>0){
+	    const accPnL={A:0,B:0,C:0};
+	    subs.forEach(s=>{
+	      const k=s.account==='账户A'?'A':s.account==='账户B'?'B':s.account==='账户C'?'C':null;
+		      const effSell=getEff(s,'sellPrice'); if(!k||!effSell) return;
+	      const lots=s.alot||s.lots;
+	      const cost=(s.amount/s.lots)*lots+COMMISSION;
+	      const rev=effSell*lots*s.lot;
+	      accPnL[k]+=rev-cost;
+	    });
+	    html+=`<div class="stat-row">
+	      ${['A','B','C'].map(k=>{
+	        const pnl=accPnL[k];
+	        const color=pnl>0?'var(--red)':pnl<0?'var(--green)':'var(--muted)';
+	        return '<div class="stat-chip"><div class="v" style="color:'+color+'">'+(pnl?(pnl>0?'+':'')+Math.round(pnl).toLocaleString():'—')+'</div><div class="l">账户'+k+'盈亏</div></div>';
+	      }).join('')}
+	    </div>`;
+	  }
+
+  // Split active (not sold) vs sold
+  const soldSubs = subs.filter(s => s.sellPrice);
+  const activeSubs = subs.filter(s => !s.sellPrice);
+
+  // Active table
+  if (subs.length === 0) {
+    html += '<div class="card" style="text-align:center;color:var(--muted);padding:40px">暂无申购记录<br>从「列表」或「计算器」添加</div>';
+  } else {
+    if (activeSubs.length > 0) {
+      html += '<div class="card" style="padding:0;overflow-x:auto"><table class="tbl"><thead><tr><th>状态</th><th>股票</th><th>账户</th><th>申购</th><th>中签</th><th>成本</th><th>现价</th><th>卖出价</th><th>盈亏</th><th>操作</th></tr></thead><tbody>';
+      activeSubs.forEach(s=>{
+        const effAlot=getEff(s,'alot');
+        const effSell=getEff(s,'sellPrice');
+        const alot=effAlot!=null?effAlot:0, hasAlloc=effAlot!=null;
+        const cost=hasAlloc?(alot===0?'0':((s.amount/s.lots)*alot+COMMISSION).toFixed(0)):'—';
+        let st='🟡进行中',sc='b-sub';
+        if(hasAlloc&&s.listDate<=today){st='🟢待卖';sc='b-done';}
+        else if(s.subEnd<today){st='⏳待开';sc='b-wait';}
+        const isPending=!!pendingEdits[s.id];
+        if(hiddenSubs.has(s.id)){
+          html+=`<tr style="background:${isPending?'rgba(88,166,255,0.12)':'rgba(240,192,64,0.08)'};cursor:pointer" onclick="toggleHideSub('${s.id}')">
+            <td><span class="badge ${sc}">${st}</span>${isPending?' <span style="font-size:0.7em;color:var(--accent)">✎</span>':''}</td>
+            <td colspan="8"><strong>${s.name}</strong> <code style="font-size:0.7em;color:var(--muted)">${s.code}</code> <span style="color:var(--muted);font-size:0.75em">${s.account} &middot; ${s.tier||s.lots+'手'} ${hasAlloc?' | '+alot+'手':''}</span></td>
+            <td>${isPending?`<button class="btn btn-sm" onclick="delete pendingEdits['${s.id}'];render();event.stopPropagation()" title="撤销此条更改" style="font-size:0.9em;color:var(--orange)">↩</button>`:''}<button class="btn btn-sm" onclick="toggleHideSub('${s.id}');event.stopPropagation()" title="展开" style="font-size:0.9em">👁</button>
+            <button class="btn btn-sm btn-danger" onclick="delSub('${s.id}');event.stopPropagation()" title="删除">🗑</button></td>
+          </tr>`;
+        } else {
+          html+=`<tr style="${isPending?'background:rgba(88,166,255,0.06)':''}">
+            <td><span class="badge ${sc}">${st}</span>${isPending?' <span style="font-size:0.7em;color:var(--accent)">✎</span>':''}</td>
+            <td><strong>${s.name}</strong><br><code style="font-size:0.7em">${s.code}</code></td>
+            <td>${s.account}</td>
+            <td>${s.tier||s.lots+'手'}<br><span style="font-size:0.7em;color:var(--muted)">${s.frozen.toLocaleString()}</span></td>
+            <td><input value="${effAlot!=null?effAlot:''}" placeholder="中签" style="width:48px;padding:2px 4px;font-size:0.72em;text-align:center${isPending?';border-color:var(--accent)':''}" onchange="setPending('${s.id}','alot',this.value.trim()===''?undefined:parseInt(this.value));render()" onclick="event.stopPropagation()"></td>
+            <td class="num" style="font-size:0.78em">${hasAlloc?cost:'—'}</td>
+            <td>${hasAlloc&&alot>0?'<input value="'+(s.curPrice||'')+'" placeholder="现价" data-id="'+s.id+'" data-lots="'+alot+'" data-lot="'+s.lot+'" style="width:52px;padding:2px 4px;font-size:0.68em;text-align:center" onchange="updateCurPriceAndShow(this)" onclick="event.stopPropagation()"><br><span class="mv" style="font-size:0.65em;color:var(--accent)">'+(s.curPrice?((s.curPrice*alot*s.lot)/1e4).toFixed(2)+'万':'—')+'</span>':'—'}</td>
+            <td><input value="" placeholder="卖出" style="width:60px;padding:2px 4px;font-size:0.72em;text-align:center${isPending?';border-color:var(--accent)':''}" onchange="setPending('${s.id}','sellPrice',parseFloat(this.value)||undefined);setPending('${s.id}','sellDate',today);render()" onclick="event.stopPropagation()"></td>
+            <td class="num" style="font-size:0.78em;color:var(--muted)">${s.listDate<=today&&hasAlloc?'<span style="color:var(--orange)">待填</span>':'—'}</td>
+            <td>
+              ${isPending?`<button class="btn btn-sm" onclick="delete pendingEdits['${s.id}'];render();event.stopPropagation()" title="撤销此条更改" style="font-size:0.9em;color:var(--orange)">↩</button>`:''}
+              <button class="btn btn-sm" onclick="toggleHideSub('${s.id}');event.stopPropagation()" title="折叠" style="font-size:0.9em">🙈</button>
+              <button class="btn btn-sm btn-danger" onclick="delSub('${s.id}')" title="删除">🗑</button>
+            </td></tr>`;
+        }
+      });
+      html+='</tbody></table></div>';
+    } else if (soldSubs.length > 0) {
+      html += '<div class="card" style="text-align:center;color:var(--green);padding:20px;font-size:0.85em">✅ 所有申购已卖出</div>';
+    }
+
+    // ===== 已卖出折叠栏 =====
+    if (soldSubs.length > 0) {
+      const soldExpanded = localStorage.getItem('ipo_sold_expanded') === '1';
+      let totalPnL = 0;
+      soldSubs.forEach(s => {
+        const lots = s.alot || s.lots;
+        const cost = (s.amount / s.lots) * lots + COMMISSION;
+        const effSell=getEff(s,'sellPrice'); const rev=(effSell!=null?effSell:s.sellPrice)*lots*s.lot;
+        totalPnL += rev - cost;
+      });
+      const pnlColor = totalPnL > 0 ? 'var(--red)' : totalPnL < 0 ? 'var(--green)' : 'var(--muted)';
+      const winCount = soldSubs.filter(s => {
+        const lots = s.alot || s.lots;
+        const cost = (s.amount / s.lots) * lots + COMMISSION;
+        const effSell=getEff(s,'sellPrice'); return (effSell!=null?effSell:s.sellPrice)*lots*s.lot > cost;
+      }).length;
+
+      html += `<div class="card sold-section" style="margin-top:8px;padding:12px 14px">
+        <div style="display:flex;justify-content:space-between;align-items:center;cursor:pointer" onclick="toggleSoldSection()">
+          <div style="display:flex;align-items:center;gap:10px">
+            <span style="font-size:1.1em">💰</span>
+            <strong style="color:#fff">已卖出 <span style="color:var(--muted)">${soldSubs.length}只</span></strong>
+            <span style="font-size:0.78em;color:var(--muted)">${winCount}赚 ${soldSubs.length-winCount}亏</span>
+            <span style="font-weight:700;color:${pnlColor};font-size:0.95em">${totalPnL>0?'+':''}${Math.round(totalPnL).toLocaleString()} HKD</span>
+          </div>
+          <span id="soldToggle" style="color:var(--muted);font-size:0.85em;transition:transform .2s">${soldExpanded?'▼':'▶'}</span>
+        </div>`;
+
+      if (soldExpanded) {
+        html += `<div id="soldDetail" style="margin-top:10px;overflow-x:auto"><table class="tbl" style="font-size:0.75em"><thead><tr><th>股票</th><th>账户</th><th>申购</th><th>中签</th><th>成本</th><th>卖出价</th><th>盈亏</th><th>操作</th></tr></thead><tbody>`;
+        soldSubs.sort((a,b) => (b.sellDate||'').localeCompare(a.sellDate||'')).forEach(s => {
+          const lots = s.alot || s.lots;
+          const cost = (s.amount / s.lots) * lots + COMMISSION;
+          const effSell = getEff(s,'sellPrice');
+          const effSellDate = getEff(s,'sellDate');
+          const isPending = !!(pendingEdits[s.id]);
+          const curPrice = effSell!=null?effSell:s.sellPrice;
+          const curDate = effSellDate!==undefined?effSellDate:(s.sellDate||'');
+          const rev = curPrice * lots * s.lot;
+          const pnl = rev - cost;
+          const pnlPct = ((pnl / cost) * 100).toFixed(1);
+          html += `<tr style="${isPending?'background:rgba(88,166,255,0.06)':''}">
+            <td><strong>${s.name}</strong><br><code style="font-size:0.7em">${s.code}</code>${isPending?' <span style="font-size:0.7em;color:var(--accent)">✎</span>':''}</td>
+            <td>${s.account}</td>
+            <td>${s.tier||s.lots+'手'}</td>
+            <td class="num">${lots}手</td>
+            <td class="num">${Math.round(cost).toLocaleString()}</td>
+            <td class="num">
+              <input value="${curPrice}" placeholder="卖出价" style="width:60px;padding:2px 4px;font-size:0.72em;text-align:center${isPending?';border-color:var(--accent)':''}" onchange="setPending('${s.id}','sellPrice',parseFloat(this.value)||undefined);render()" onclick="event.stopPropagation()">
+              <input value="${curDate}" type="date" style="width:95px;padding:1px 3px;font-size:0.62em;margin-top:2px${isPending?';border-color:var(--accent)':''}" onchange="setPending('${s.id}','sellDate',this.value||undefined);render()" onclick="event.stopPropagation()">
+            </td>
+            <td class="num" style="color:${pnl>0?'var(--red)':pnl<0?'var(--green)':'var(--muted)'}">${pnl>0?'+':''}${Math.round(pnl).toLocaleString()}<br><span style="font-size:0.7em">${pnlPct}%</span></td>
+            <td style="white-space:nowrap">
+              ${isPending?`<button class="btn btn-sm" onclick="delete pendingEdits['${s.id}'];render();event.stopPropagation()" title="撤销更改" style="font-size:0.9em;color:var(--orange)">↩</button>`:''}
+              <button class="btn btn-sm btn-danger" onclick="delSub('${s.id}')" title="删除">🗑</button>
+            </td>
+          </tr>`;
+        });
+        html += '</tbody></table></div>';
+      } else {
+        html += '<div id="soldDetail" style="display:none"></div>';
+      }
+      html += '</div>';
+    }
+  }
+
+  // 底部保存栏
+  if(subs.length>0){
+    html+='<div style="display:flex;gap:8px;margin-top:8px">'+
+      '<button class="btn btn-pri btn-block" onclick="saveAllPending()">💾 保存'+(hasPending()?' ('+Object.keys(pendingEdits).length+'条未保存)':'')+'</button>'+
+      (hasPending()?'<button class="btn btn-block" onclick="discardPending()">↩ 放弃更改</button>':'')+
+    '</div>';
+  }
+
+return html;
+}
+
+function onSubStockChange(){
+  const code = document.getElementById('subStock').value;
+  const s = IPO_DATA.find(x=>x.code===code);
+  if(s){ document.getElementById('subFee').value=s.fee; }
+}
+
+function onSubTierChange(){
+  const v = document.getElementById('subTier').value;
+  document.getElementById('subLots').value = v==='0'?1:v;
+  document.getElementById('subLots').readOnly = v!=='0';
+}
+
+function saveSub(){
+  const code = document.getElementById('subStock').value;
+  if(!code){ toast('请选择股票','error'); return; }
+  const s = IPO_DATA.find(x=>x.code===code);
+  const lots = parseInt(document.getElementById('subLots').value)||0;
+  const amount = s.fee * lots;
+  const frozen = amount + COMMISSION;
+  const tierMap = {'1':'一手摸奖','5':'小甲5手','20':'小甲20手','50':'甲尾50手','0':'自定义'};
+  const rec = {
+    id: editId||Date.now().toString(),
+    code, name:s.name, type:s.type,
+    account: document.getElementById('subAccount').value,
+    tier: tierMap[document.getElementById('subTier').value]||'自定义', lots,
+    amount, frozen,
+    subEnd: s.subEnd, listDate: s.listDate, fee:s.fee, lot:s.lot,
+    sellPrice:null, sellDate:null
+  };
+  let subs = JSON.parse(localStorage.getItem('ipo_subs')||'[]');
+  if(editId){ const old=subs.find(x=>x.id===editId); if(old&&old.sellPrice){rec.sellPrice=old.sellPrice;rec.sellDate=old.sellDate;rec.actualLots=old.actualLots;} }
+  if(editId) subs=subs.map(x=>x.id===editId?rec:x);
+  else subs.push(rec);
+  localStorage.setItem('ipo_subs',JSON.stringify(subs));
+  editId=null;
+  document.getElementById('subStock').value=''; document.getElementById('subLots').value=1;
+  document.getElementById('subFee').value=''; document.getElementById('subTier').value='1';
+  document.getElementById('editHint').textContent='';
+  render(); toast('✅ 已保存','success');
+}
+
+// ==================== 补录功能 ====================
+function showBackfill(){
+  const subs = JSON.parse(localStorage.getItem('ipo_subs')||'[]');
+
+  // 已截止认购的股票（含已上市和待上市）
+  const closedStocks = IPO_DATA.filter(s => s.subEnd < today).sort((a,b) => b.subEnd.localeCompare(a.subEnd));
+  // 已上市的股票
+  const listedStocks = IPO_DATA.filter(s => s.listDate <= today).sort((a,b) => b.listDate.localeCompare(a.listDate));
+
+  let html = `<button class="modal-close" onclick="closeModal()" style="float:right;background:none;border:none;color:var(--muted);font-size:1.3em;cursor:pointer">✕</button>
+    <h3>📋 补录</h3>
+    <p style="color:var(--muted);font-size:0.78em;margin-bottom:12px">补录漏记的申购。中签/卖出可留空后续补填。同账户已有记录会更新。</p>`;
+
+  // 统一补录表单（股票列表含所有已截止的）
+  html += `<div class="card" style="margin-bottom:12px">
+    <h4 style="margin-bottom:8px;color:#fff">➕ 快速补录</h4>
+    <div class="form-row">
+      <div class="form-group"><label>股票</label><select id="bfStock" onchange="onBfStockChange()">`;
+  // 分组：待上市 + 已上市
+  const pendingList = closedStocks.filter(s => s.listDate > today);
+  if (pendingList.length > 0) {
+    html += `<optgroup label="⏰ 已截止·待上市">`;
+    pendingList.forEach(s => { html += `<option value="${s.code}">${s.name} (${s.code}) · ${s.listDate}上市</option>`; });
+    html += `</optgroup>`;
+  }
+  if (listedStocks.length > 0) {
+    html += `<optgroup label="💹 已上市">`;
+    listedStocks.forEach(s => { html += `<option value="${s.code}">${s.name} (${s.code}) · ${s.listDate} · ${s.dec||''}</option>`; });
+    html += `</optgroup>`;
+  }
+  html += `</select></div>
+      <div class="form-group"><label>账户</label><select id="bfAccount"><option>账户A</option><option>账户B</option><option>账户C</option></select></div>
+    </div>
+    <div class="form-row">
+      <div class="form-group"><label>申购手数</label><input id="bfLots" type="number" value="1" min="1" style="width:100%"></div>
+      <div class="form-group"><label>中签手数 (0=未中, 留空=未知)</label><input id="bfAlot" type="number" min="0" placeholder="留空待定" style="width:100%"></div>
+      <div class="form-group"><label>卖出价 HKD (留空=未卖)</label><input id="bfSell" type="number" step="0.01" placeholder="留空待卖" style="width:100%"></div>
+    </div>
+    <button class="btn btn-pri btn-block" onclick="saveBackfill()">💾 补录</button>
+  </div>`;
+
+  // ===== Section 1: 已截止未录入 =====
+  const unrecordedStocks = closedStocks.filter(s => !subs.some(r => r.code === s.code));
+  html += `<h4 style="margin-bottom:8px;color:var(--orange)">⏰ 已截止未录入 (${unrecordedStocks.length}只)</h4>`;
+  if (unrecordedStocks.length === 0) {
+    html += '<div class="card" style="text-align:center;color:var(--green);padding:14px;font-size:0.82em">✅ 所有已截止股票均已录入</div>';
+  } else {
+    unrecordedStocks.forEach(s => {
+      const isListed = s.listDate <= today;
+      html += `<div class="card" style="padding:10px;margin-bottom:6px;cursor:pointer;border-color:${isListed?'var(--border)':'rgba(243,156,18,0.3)'}" onclick="document.getElementById('bfStock').value='${s.code}';onBfStockChange();document.getElementById('bfLots').focus()">
+        <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:4px">
+          <div>
+            <strong style="color:#fff">${s.name}</strong> <code style="font-size:0.7em">${s.code}</code>
+            <span style="color:var(--muted);font-size:0.75em;margin-left:6px">截止 ${s.subEnd}</span>
+            <span style="color:${isListed?'var(--accent)':'var(--orange)'};font-size:0.75em;margin-left:4px">${isListed?'已上市 '+s.listDate:'待上市 '+s.listDate}</span>
+          </div>
+          <span style="font-size:0.78em;color:var(--orange)">⚠️ 漏记 · 点击补录</span>
+        </div>
+      </div>`;
+    });
+  }
+
+  // ===== Section 2: 已上市概览 =====
+  html += `<h4 style="margin:14px 0 8px;color:#fff">🏁 已上市新股概览 (${listedStocks.length}只)</h4>`;
+
+  if (listedStocks.length === 0) {
+    html += '<div class="card" style="text-align:center;color:var(--muted);padding:30px">暂无已上市新股</div>';
+  } else {
+    listedStocks.forEach(s => {
+      const stockSubs = subs.filter(x => x.code === s.code);
+      const accStatus = {'账户A':null,'账户B':null,'账户C':null};
+      stockSubs.forEach(r => {
+        let icon = '📝';
+        if (r.sellPrice) icon = '✅';
+        else if (r.alot != null && r.alot > 0) icon = '🟢';
+        else if (r.alot != null && r.alot === 0) icon = '❌';
+        accStatus[r.account] = {icon, lots: r.lots, alot: r.alot, sell: r.sellPrice};
+      });
+
+      html += `<div class="card" style="padding:10px;margin-bottom:6px;cursor:pointer" onclick="document.getElementById('bfStock').value='${s.code}';onBfStockChange();document.getElementById('bfLots').focus()">
+        <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:4px">
+          <div>
+            <strong style="color:#fff">${s.name}</strong> <code style="font-size:0.7em">${s.code}</code>
+            <span style="color:var(--muted);font-size:0.75em;margin-left:6px">上市 ${s.listDate}</span>
+            <span style="color:var(--gold);font-size:0.75em;margin-left:4px">${s.dec||''}</span>
+          </div>
+          <div style="display:flex;gap:6px;align-items:center">
+            ${['账户A','账户B','账户C'].map(acc => {
+              const st = accStatus[acc];
+              if (st) {
+                return `<span style="font-size:0.72em;background:var(--bg);padding:2px 6px;border-radius:4px" title="${acc}: ${st.lots}手申购 · 中签${st.alot!=null?st.alot:'?'}手${st.sell?' · 卖出'+st.sell:''}">${st.icon} ${acc.slice(2)}</span>`;
+              } else {
+                return `<span style="font-size:0.72em;color:var(--orange);background:rgba(243,156,18,0.1);padding:2px 6px;border-radius:4px">⚠️ 未录</span>`;
+              }
+            }).join('')}
+          </div>
+        </div>
+      </div>`;
+    });
+  }
+
+  document.getElementById('modalContent').innerHTML = html;
+  document.getElementById('modalOverlay').style.display = 'flex';
+  // 初始化表单状态
+  setTimeout(onBfStockChange, 50);
+}
+
+// 切换补录股票时，根据是否已上市调整表单提示
+function onBfStockChange(){
+  const code = document.getElementById('bfStock').value;
+  const s = IPO_DATA.find(x => x.code === code);
+  if (!s) return;
+  const isListed = s.listDate <= today;
+  const alotEl = document.getElementById('bfAlot');
+  const sellEl = document.getElementById('bfSell');
+  if (!isListed) {
+    alotEl.placeholder = '尚未上市，暂不可填';
+    alotEl.disabled = true;
+    alotEl.style.opacity = '0.5';
+    sellEl.placeholder = '尚未上市，暂不可填';
+    sellEl.disabled = true;
+    sellEl.style.opacity = '0.5';
+  } else {
+    alotEl.placeholder = '留空待定';
+    alotEl.disabled = false;
+    alotEl.style.opacity = '1';
+    sellEl.placeholder = '留空待卖';
+    sellEl.disabled = false;
+    sellEl.style.opacity = '1';
+  }
+}
+
+function saveBackfill(){
+  const code = document.getElementById('bfStock').value;
+  const account = document.getElementById('bfAccount').value;
+  const lots = parseInt(document.getElementById('bfLots').value) || 1;
+  const alotRaw = document.getElementById('bfAlot').value.trim();
+  const alot = alotRaw !== '' ? parseInt(alotRaw) : undefined;
+  const sellRaw = document.getElementById('bfSell').value.trim();
+  const sellPrice = sellRaw !== '' ? parseFloat(sellRaw) : undefined;
+
+  const s = IPO_DATA.find(x => x.code === code);
+  if (!s) { toast('请选择股票', 'error'); return; }
+  if (lots < 1) { toast('手数至少为1', 'error'); return; }
+
+  let subs = JSON.parse(localStorage.getItem('ipo_subs') || '[]');
+
+  // 检查是否已有同股票+同账户记录
+  const existingIdx = subs.findIndex(x => x.code === code && x.account === account);
+  if (existingIdx >= 0) {
+    // 更新已有记录
+    const r = subs[existingIdx];
+    const oldFrozen=r.frozen, oldAlotR=r.alot;
+    r.lots = lots;
+    r.amount = s.fee * lots;
+    r.frozen = s.fee * lots + COMMISSION;
+    r.tier = lots + '手';
+    if (alot !== undefined) {
+      const oldCost=(oldAlotR!=null)?(oldAlotR===0?0:oldAlotR*s.fee+COMMISSION):oldFrozen;
+      const newCost=alot===0?0:alot*s.fee+COMMISSION;
+      const refund=oldCost-newCost;
+      if(refund!==0){const ak=account==='账户A'?'A':account==='账户B'?'B':'C';calcFunds[ak]+=refund;saveCalcState();toast(account+' 中签退款 '+(refund>=0?'+':'')+Math.round(refund).toLocaleString()+' HKD','success');}
+      r.alot = alot;
+    }
+    if (sellPrice !== undefined) { const oldPrice=r.sellPrice; r.sellPrice = sellPrice; r.sellDate = today; const accKey=account==='账户A'?'A':account==='账户B'?'B':'C'; const rLots=r.alot||r.lots; const proceeds=sellPrice*rLots*s.lot; if(oldPrice){const diff=(sellPrice-oldPrice)*rLots*s.lot;calcFunds[accKey]+=diff;toast(account+' 卖出价调整 '+(diff>0?'+':'')+Math.round(diff).toLocaleString()+' HKD','success');}else{calcFunds[accKey]+=proceeds;toast(account+' 回款 +'+Math.round(proceeds).toLocaleString()+' HKD 已入账','success');}saveCalcState(); }
+    localStorage.setItem('ipo_subs', JSON.stringify(subs));
+    // 已卖出 → 自动折叠；未卖出 → 展开以便继续编辑
+    if (r.sellPrice) { hiddenSubs.add(r.id); }
+    else { hiddenSubs.delete(r.id); }
+    localStorage.setItem('ipo_subs_hidden', JSON.stringify([...hiddenSubs]));
+    toast('✅ 已更新 ' + s.name + ' → ' + account, 'success');
+  } else {
+    // 新建记录
+    const rec = {
+      id: Date.now().toString(),
+      code, name: s.name, type: s.type,
+      account, tier: lots + '手', lots,
+      amount: s.fee * lots,
+      frozen: s.fee * lots + COMMISSION,
+      subEnd: s.subEnd, listDate: s.listDate, fee: s.fee, lot: s.lot,
+      sellPrice: sellPrice || null,
+      sellDate: sellPrice ? today : null,
+      alot: alot
+    };
+    subs.push(rec);
+    // 中签退款：冻结金额 - 实际成本
+    if(rec.alot!=null){const accKeyR=account==='账户A'?'A':account==='账户B'?'B':'C';const actualCost=rec.alot===0?0:rec.alot*s.fee+COMMISSION;const refund=rec.frozen-actualCost;calcFunds[accKeyR]+=refund;saveCalcState();toast(account+' 中签退款 '+(refund>=0?'+':'')+Math.round(refund).toLocaleString()+' HKD','success');}
+    // 卖出回款
+    if(rec.sellPrice){const accKeyN=account==='账户A'?'A':account==='账户B'?'B':'C';const rLotsN=rec.alot||lots;const proceedsN=rec.sellPrice*rLotsN*s.lot;calcFunds[accKeyN]+=proceedsN;saveCalcState();toast(account+' 回款 +'+Math.round(proceedsN).toLocaleString()+' HKD 已入账','success');}
+    localStorage.setItem('ipo_subs', JSON.stringify(subs));
+    // 已卖出 → 自动折叠
+    if (rec.sellPrice) { hiddenSubs.add(rec.id); localStorage.setItem('ipo_subs_hidden', JSON.stringify([...hiddenSubs])); }
+    toast('✅ 已补录 ' + s.name + ' → ' + account, 'success');
+  }
+
+  // 刷新弹窗内容
+  showBackfill();
+  // 同步刷新底层页面
+  render();
+}
+
+function editSub(id){
+  const subs = JSON.parse(localStorage.getItem('ipo_subs')||'[]');
+  const s = subs.find(x=>x.id===id); if(!s) return;
+  editId = id;
+  render();
+  setTimeout(()=>{
+    document.getElementById('subStock').value=s.code;
+    document.getElementById('subAccount').value=s.account;
+    document.getElementById('subLots').value=s.lots;
+    document.getElementById('subLots').readOnly=false;
+    document.getElementById('subTier').value='0';
+    document.getElementById('subFee').value=s.fee;
+    document.getElementById('editHint').textContent='正在编辑: '+s.name;
+  },100);
+}
+
+function delSub(id){
+  if(!confirm('确定删除？')) return;
+  let subs = JSON.parse(localStorage.getItem('ipo_subs')||'[]');
+  const rec = subs.find(x=>x.id===id);
+  if(rec){
+    // 记录已删除的股票+账户，防止选股页面重新保存时恢复
+    let deleted = new Set(JSON.parse(localStorage.getItem('ipo_subs_deleted')||'[]'));
+    deleted.add(rec.code+'_'+rec.account);
+    localStorage.setItem('ipo_subs_deleted',JSON.stringify([...deleted]));
+  }
+  subs = subs.filter(x=>x.id!==id);
+  localStorage.setItem('ipo_subs',JSON.stringify(subs));
+  // 同时清理 pendingEdits
+  delete pendingEdits[id];
+  render(); toast('已删除','info');
+}
+
+function saveSell(id){
+  const price = parseFloat(document.getElementById('sellPrice').value)||0;
+  const date = document.getElementById('sellDate').value;
+  const lots = parseInt(document.getElementById('sellLots').value)||0;
+  let subs = JSON.parse(localStorage.getItem('ipo_subs')||'[]');
+  const oldSub2=subs.find(s=>s.id===id); const oldPrice2=oldSub2?oldSub2.sellPrice:null; subs = subs.map(s=>s.id===id?{...s,sellPrice:price,sellDate:date,actualLots:lots}:s); const accKey3=oldSub2?oldSub2.account==='账户A'?'A':oldSub2.account==='账户B'?'B':'C':'A'; const rLots3=(oldSub2?(oldSub2.alot||oldSub2.lots):lots); if(oldPrice2){calcFunds[accKey3]+=(price-oldPrice2)*rLots3*(oldSub2?oldSub2.lot:100);}else{calcFunds[accKey3]+=price*rLots3*(oldSub2?oldSub2.lot:100);}saveCalcState(); localStorage.setItem('ipo_subs',JSON.stringify(subs));
+  // 已卖出 → 永久折叠
+  hiddenSubs.add(id);
+  localStorage.setItem('ipo_subs_hidden',JSON.stringify([...hiddenSubs]));
+  closeModal(); render(); toast('✅ 已保存','success');
+}
+
+// ==================== TAB 5: ME ====================
+function renderMeTab(){
+  let html = '<div class="header"><h1>⚙️ 我的</h1></div>';
+
+  // ID display
+  const uid = localStorage.getItem('ipo_uid')||('HK'+Math.random().toString(36).slice(2,8).toUpperCase());
+  localStorage.setItem('ipo_uid',uid);
+  html += `<div class="card">
+    <div style="display:flex;align-items:center;gap:12px">
+      <div style="width:44px;height:44px;border-radius:50%;background:var(--accent);display:flex;align-items:center;justify-content:center;font-size:1.2em">📈</div>
+      <div><div style="color:#fff;font-weight:600">中签猎手</div><div style="color:var(--muted);font-size:0.78em">ID: ${uid}</div></div>
+    </div>
+  </div>`;
+
+  // Webhook reminders
+  html += `<div class="card"><h3>🔔 Webhook 提醒</h3>
+    <p style="font-size:0.78em;color:var(--muted);margin-bottom:8px">把新股节点推送到你的通知工具</p>
+    <div class="webhook-row">
+      ${['企业微信','飞书','钉钉','Bark','自定义'].map(p=>`<span class="webhook-chip${webhookSettings.platform===p?' active':''}" onclick="webhookSettings.platform='${p}';saveWebhook();render()">${p}</span>`).join('')}
+    </div>
+    <div class="form-group"><label>Webhook 地址</label><input type="text" id="whUrl" value="${webhookSettings.url||''}" placeholder="https://your-webhook-url.com/endpoint"></div>
+    <div class="form-row">
+      <div class="form-group"><label>招股提醒</label><select id="whSubTime"><option ${webhookSettings.subTime==='07:30'?'selected':''}>07:30</option><option ${webhookSettings.subTime==='08:00'?'selected':''}>08:00</option><option ${webhookSettings.subTime==='09:00'?'selected':''}>09:00</option></select></div>
+      <div class="form-group"><label>暗盘提醒</label><select id="whDarkTime"><option ${webhookSettings.darkTime==='15:30'?'selected':''}>15:30</option><option ${webhookSettings.darkTime==='16:00'?'selected':''}>16:00</option><option ${webhookSettings.darkTime==='16:15'?'selected':''}>16:15</option></select></div>
+    </div>
+    <div class="flex-row">
+      <label style="font-size:0.82em"><input type="checkbox" id="whSub" ${webhookSettings.sub!==false?'checked':''}> 招股提醒</label>
+      <label style="font-size:0.82em"><input type="checkbox" id="whDark" ${webhookSettings.dark!==false?'checked':''}> 暗盘提醒</label>
+      <label style="font-size:0.82em"><input type="checkbox" id="whResult" ${webhookSettings.result!==false?'checked':''}> 配售结果</label>
+    </div>
+    <div class="flex-row" style="margin-top:10px">
+      <button class="btn btn-pri" onclick="saveWebhook()">💾 保存设置</button>
+      <button class="btn btn-sm" onclick="testWebhook()">🧪 发送测试</button>
+    </div>
+  </div>`;
+
+  // Toolbox
+  html += `<div class="card"><h3>🧰 工具箱</h3>`;
+  const tools = [
+    {icon:'📜',name:'发行历史',desc:'历史发行记录与配售统计'},
+    {icon:'📋',name:'最新递表',desc:'最近提交上市申请的公司'},
+    {icon:'✅',name:'已通过聆讯',desc:'通过聆讯待招股的公司'},
+    {icon:'📡',name:'最近动态',desc:'IPO市场最新动态'}
+  ];
+  tools.forEach(t=>{
+    html += `<div class="stock-row" onclick="showToolbox('${t.name}')">
+      <span style="font-size:1.3em">${t.icon}</span>
+      <div class="info"><div class="name">${t.name}</div><div class="meta">${t.desc}</div></div>
+      <span style="color:var(--muted)">›</span></div>`;
+  });
+  html += '</div>';
+
+  // Data management
+  html += `<div class="card">
+    <h3>💾 数据管理</h3>
+    <div class="flex-row">
+      <button class="btn btn-sm" onclick="exportData()">📤 导出数据</button>
+      <button class="btn btn-sm" onclick="document.getElementById('importFile').click()">📥 导入数据</button>
+      <button class="btn btn-sm btn-danger" onclick="if(confirm('确定清除所有申购和盈亏数据？')){localStorage.removeItem('ipo_subs');localStorage.removeItem('ipo_subs_deleted');render();toast('已清除','info')}">🗑 清除申购</button>
+      <input type="file" id="importFile" style="display:none" accept=".json" onchange="importData(event)">
+    </div>
+  </div>`;
+
+  return html;
+}
+
+function saveWebhook(){
+  webhookSettings.url = document.getElementById('whUrl').value;
+  webhookSettings.platform = webhookSettings.platform||'自定义';
+  webhookSettings.subTime = document.getElementById('whSubTime').value;
+  webhookSettings.darkTime = document.getElementById('whDarkTime').value;
+  webhookSettings.sub = document.getElementById('whSub').checked;
+  webhookSettings.dark = document.getElementById('whDark').checked;
+  webhookSettings.result = document.getElementById('whResult').checked;
+  localStorage.setItem('ipo_webhook',JSON.stringify(webhookSettings));
+  toast('✅ Webhook 设置已保存','success');
+}
+
+function testWebhook(){
+  const url = document.getElementById('whUrl').value;
+  if(!url){ toast('请先填写 Webhook 地址','error'); return; }
+  fetch(url,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({text:'🧪 IPOBOX 测试消息 — 新股日历 Webhook 配置成功！',time:new Date().toISOString()})})
+    .then(r=>{if(r.ok) toast('✅ 测试发送成功','success'); else toast('❌ 发送失败: '+r.status,'error');})
+    .catch(()=>toast('❌ 网络错误，请检查地址','error'));
+}
+
+function showToolbox(name){
+  if(name==='已通过聆讯'){
+    document.getElementById('modalContent').innerHTML = `
+      <button class="modal-close" onclick="closeModal()" style="float:right;background:none;border:none;color:var(--muted);font-size:1.3em;cursor:pointer">✕</button>
+      <h3>✅ 已通过聆讯</h3>
+      ${PIPELINE.map(p=>`<div class="stock-row"><span class="badge b-done">通过</span> ${p.name} <span style="flex:1"></span><span style="color:var(--muted);font-size:0.78em">${p.date}</span></div>`).join('')}
+      <p style="color:var(--muted);font-size:0.78em;margin-top:10px">数据来源：港交所披露易</p>`;
+    document.getElementById('modalOverlay').style.display='flex';
+  } else {
+    toast('📡 该功能需联网抓取最新数据，请使用「刷新数据」或「手动粘贴」','info');
+  }
+}
+
+function exportData(){
+  const data = {
+    subs: JSON.parse(localStorage.getItem('ipo_subs')||'[]'),
+    webhook: JSON.parse(localStorage.getItem('ipo_webhook')||'{}'),
+    exportDate: new Date().toISOString()
+  };
+  const blob = new Blob([JSON.stringify(data,null,2)],{type:'application/json'});
+  const a = document.createElement('a'); a.href=URL.createObjectURL(blob);
+  a.download='ipo_data_'+today+'.json'; a.click();
+  toast('✅ 已导出','success');
+}
+
+function importData(event){
+  const file = event.target.files[0]; if(!file) return;
+  const reader = new FileReader();
+  reader.onload = function(e){
+    try{
+      const data = JSON.parse(e.target.result);
+      if(data.subs){
+        // 已卖出记录自动折叠
+        data.subs.forEach(s=>{ if(s.sellPrice) hiddenSubs.add(s.id); });
+        localStorage.setItem('ipo_subs_hidden',JSON.stringify([...hiddenSubs]));
+        localStorage.setItem('ipo_subs',JSON.stringify(data.subs));
+      }
+      if(data.webhook) localStorage.setItem('ipo_webhook',JSON.stringify(data.webhook));
+      render(); toast('✅ 数据已导入','success');
+    }catch(ex){ toast('❌ 文件格式错误','error'); }
+  };
+  reader.readAsText(file);
+}
+
+// ==================== UTILS ====================
+// 孖展持久化
+function loadMargins(){
+  try{ return JSON.parse(localStorage.getItem('ipo_margins')||'{}'); }catch(e){ return {}; }
+}
+function saveMargins(margins){
+  localStorage.setItem('ipo_margins', JSON.stringify(margins));
+}
+// 页面加载时恢复孖展值
+(function(){
+  var margins=loadMargins();
+  IPO_DATA.forEach(function(s){ if(margins[s.code]) s.margin=margins[s.code]; });
+})();
+
+function updateMargin(code,val){
+  const s=IPO_DATA.find(x=>x.code===code); if(s) s.margin=val;
+  // 持久化
+  var margins=loadMargins();
+  margins[code]=val;
+  saveMargins(margins);
+  // 刷新单只股票融资额单元格
+  var finEl=document.getElementById('finAmt-'+code);
+  if(finEl && s){
+    var mv=(val||'').toString();
+    var finAmt=(mv&&mv!=='—'&&!isNaN(parseFloat(mv))&&parseFloat(mv)>0)?(parseFloat(mv)*(s.pubLots||0)*s.fee):0;
+    finEl.textContent=finAmt>0?((finAmt/1e8).toFixed(1)+'亿'):'—';
+    finEl.style.color=finAmt>0?'var(--accent)':'var(--muted)';
+  }
+  // 刷新总融资额表头
+  var totalFinEl=document.getElementById('totalFinAmt');
+  if(totalFinEl){
+    var tfa=0;
+    IPO_DATA.filter(function(si){return si.subEnd>=today;}).forEach(function(si){
+      var mv2=(si.margin||'').toString();
+      if(mv2&&mv2!=='—'&&!isNaN(parseFloat(mv2))&&parseFloat(mv2)>0){
+        tfa+=parseFloat(mv2)*(si.pubLots||0)*si.fee;
+      }
+    });
+    totalFinEl.textContent='总融资额\n'+(tfa>0?(tfa/1e8).toFixed(1)+'亿':'—');
+  }
+  // 刷新决策面板
+  var dp=document.getElementById('decisionPanel');
+  if(dp) dp.innerHTML=renderDecisionPanel();
+}
+
+function renderDecisionReason(s){
+  // 行业 AH 折价基准
+  var sectorBenchmarks={
+    '半导体':-40, '芯片':-40, '晶圆':-40, 'SiC':-40,
+    'MLCC':-30, '元器件':-30, '电子':-35, '仪器':-35,
+    '精密制造':-25, '制造':-25, '刀具':-25, 'PCB':-25, '钻针':-25,
+    '化工':-45,
+    '消费电子':-20, '代工':-20,
+  };
+  var bench=null;
+  var sector='';
+  var keys=Object.keys(sectorBenchmarks);
+  for(var i=0;i<keys.length;i++){
+    if((s.note||'').indexOf(keys[i])>=0 || (s.sh||'').indexOf(keys[i])>=0 || (s.name||'').indexOf(keys[i])>=0){
+      bench=sectorBenchmarks[keys[i]]; sector=keys[i]; break;
+    }
+  }
+
+  var items=[];
+  // AH 股：折价对比
+  if(s.type==='ah' && s.ahDisc){
+    items.push('<span style="color:var(--muted)">AH折价</span> <b style="color:'+(parseFloat(s.ahDisc)<bench?'var(--red)':'var(--green)')+'">'+s.ahDisc+'</b>');
+    if(bench!==null){
+      var diff=parseFloat(s.ahDisc)-bench;
+      items.push('<span style="color:var(--muted)">vs '+sector+'基准'+bench+'%</span> <b style="color:'+(diff<0?'var(--red)':'var(--green)')+'">'+(diff<0?'深':'浅')+Math.abs(diff)+'pp</b>');
+    }
+  }
+  // 基石
+  var csStr=(s.cs||1)+'星';
+  if(s.cs>=5) csStr='<b style="color:var(--red)">'+csStr+'</b>';
+  items.push('<span style="color:var(--muted)">基石</span> '+csStr+' '+(s.cornerstone||'无'));
+  // 热度
+  items.push('<span style="color:var(--muted)">热度</span> '+(s.hot||'—'));
+  // 预计中签
+  var curTiers=stockTiers[s.code]||{};
+  var hasAny=false;
+  ['A','B','C'].forEach(function(acc){ if(curTiers[acc]) hasAny=true; });
+  if(hasAny && (s.margin||'').toString().length>0 && !isNaN(parseFloat(s.margin)) && parseFloat(s.margin)>0){
+    var parts=[];
+    ['A','B','C'].forEach(function(acc){
+      var t=curTiers[acc];
+      if(t){
+        var r=getAllocRate(s.code, t.lots, s.fee);
+        if(r>0) parts.push(acc+':'+(t.lots*r).toFixed(1)+'手');
+      }
+    });
+    if(parts.length>0) items.push('<span style="color:var(--muted)">中签</span> '+parts.join(' '));
+  }
+  // 结论（决策结果）
+  items.push('→ <b style="color:var(--gold);font-size:1.05em">'+(s.dec||'')+'</b>');
+
+  return '<div style="font-size:0.72em;line-height:1.6">'+items.join(' &nbsp;<span style="color:var(--border)">|</span>&nbsp; ')+'</div>';
+}
+function showManualUpdate(){
+  document.getElementById('modalContent').innerHTML = '<div style="padding:10px"><button onclick="closeModal()" style="float:right;background:none;border:none;color:var(--muted);font-size:1.3em;cursor:pointer">✕</button><h3>🔄 手动更新新股数据</h3><p style="color:var(--muted);font-size:0.8em;margin-bottom:10px">粘贴JSON更新新股列表</p><textarea id="manualData" style="height:250px;font-family:monospace;font-size:0.75em" placeholder=\'[{"code":"00000","name":"示例",...}]\'></textarea><div style="margin-top:10px;display:flex;gap:8px"><button class="btn btn-pri" onclick="applyManualUpdate()">✅ 应用</button><button class="btn" onclick="closeModal()">取消</button></div></div>';
+  document.getElementById('modalOverlay').style.display='flex';
+}
+// 自动刷新：从本地服务器拉数据
+async function refreshFromServer(){
+  try{
+    const resp=await fetch('http://localhost:8766/api/refresh');
+    const json=await resp.json();
+    if(json.success){
+      json.data.forEach(n=>{
+        const i=IPO_DATA.findIndex(x=>x.code===n.code);
+        if(i>=0) IPO_DATA[i]={...IPO_DATA[i],...n};
+        else IPO_DATA.push(n);
+      });
+      IPO_DATA.sort((a,b)=>a.listDate.localeCompare(b.listDate));
+      render(); toast('✅ 刷新成功: '+json.count+'只新股','success');
+    } else {
+      toast('⚠️ 抓取失败，使用缓存: '+json.data.length+'只','error');
+      if(json.data.length) applyServerData(json.data);
+    }
+  }catch(e){toast('❌ 无法连接本地服务(端口8766)，请启动 ipo_server.js','error');}
+}
+function applyServerData(data){
+  data.forEach(n=>{
+    const i=IPO_DATA.findIndex(x=>x.code===n.code);
+    if(i>=0) IPO_DATA[i]={...IPO_DATA[i],...n};
+    else IPO_DATA.push(n);
+  });
+  IPO_DATA.sort((a,b)=>a.listDate.localeCompare(b.listDate));
+  render();
+}
+// 页面加载时自动尝试连接服务器
+function initAutoRefresh(){
+  fetch('http://localhost:8766/api/ipo').then(r=>r.json()).then(j=>{
+    if(j.success&&j.data&&j.data.length>0){
+      applyServerData(j.data);
+      document.getElementById('serverStatus')&&(document.getElementById('serverStatus').textContent='🟢 在线 · '+j.updated||'');
+    }
+  }).catch(()=>{});
+}
+setTimeout(initAutoRefresh,500);
+
+// 档位为空时，默认只显示乙头（提醒用户填入真实招股书数据）
+function getYiAmts(code, fee){
+  var key='yi_tiers_'+code;
+  try{
+    var saved=JSON.parse(localStorage.getItem(key)||'null');
+    if(saved&&saved.length>0) return saved;
+  }catch(e){}
+  // 无自定义档位：返回空数组，提醒用户从招股书填入真实数据
+  // 永不计算/猜测档位，杜绝不存在的档位出现
+  return [];
+}
+function applyManualUpdate(){
+  try{
+    const d=JSON.parse(document.getElementById('manualData').value.trim());
+    if(!Array.isArray(d)) throw new Error('需要数组');
+    d.forEach(n=>{const i=IPO_DATA.findIndex(x=>x.code===n.code); if(i>=0) IPO_DATA[i]={...IPO_DATA[i],...n}; else IPO_DATA.push(n);});
+    IPO_DATA.sort((a,b)=>a.listDate.localeCompare(b.listDate));
+    closeModal(); render(); toast('✅ 已更新','success');
+  }catch(e){toast('❌ JSON格式错误: '+e.message,'error');}
+}
+function showDetail(code){
+  const s=IPO_DATA.find(x=>x.code===code); if(!s) return;
+  const tl={ah:'🔷 A+H',inst:'⭐ 机构票',zhuang:'🦄 庄票',cold:'⚪ 其他'};
+  var h='<button onclick="closeModal()" style="float:right;background:none;border:none;color:var(--muted);font-size:1.3em;cursor:pointer">✕</button>';
+  h+='<h3>'+s.name+' <code>'+s.code+'</code></h3>';
+  h+='<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;font-size:0.82em">';
+  var rows=[];
+  rows.push('<div><span style="color:var(--muted)">类型：</span>'+(tl[s.type]||s.type)+' <span class="badge b-mech">'+(s.mech||'')+'</span></div>');
+  rows.push('<div><span style="color:var(--muted)">招股价：</span>'+s.price+'</div>');
+  rows.push('<div><span style="color:var(--muted)">入场费：</span>'+s.fee.toLocaleString()+' HKD ('+s.lot+'股/手)</div>');
+  rows.push('<div><span style="color:var(--muted)">招股期：</span>'+s.subStart+' → '+s.subEnd+'</div>');
+  rows.push('<div><span style="color:var(--muted)">上市日：</span>'+s.listDate+'</div>');
+  rows.push('<div><span style="color:var(--muted)">公开手数：</span>'+((s.pubLots||0)/1000).toFixed(0)+'K手</div>');
+  rows.push('<div><span style="color:var(--muted)">基石：</span>'+s.cornerstone+'</div>');
+  rows.push('<div><span style="color:var(--muted)">绿鞋：</span>'+(s.gs?'✅有':'❌无')+'</div>');
+  rows.push('<div><span style="color:var(--muted)">保荐人：</span>'+(s.sponsor||'—')+'</div>');
+  rows.push('<div><span style="color:var(--muted)">孖展：</span><span style="color:var(--red)">'+(s.margin||'—')+'</span></div>');
+  rows.push('<div><span style="color:var(--muted)">计息日：</span>'+(s.interest||'?')+'天</div>');
+  rows.push('<div><span style="color:var(--muted)">预期涨幅：</span><span style="color:var(--red)">'+(s.gain||'—')+'</span></div>');
+  h+=rows.join('')+'</div>';
+  if(s.note) h+='<p style="margin-top:10px;color:var(--muted);font-size:0.8em">📝 '+s.note+'</p>';
+
+  h+='<div style="margin-top:16px;border-top:1px solid var(--border);padding-top:12px">';
+  if(s.allLots && s.allLots.length > 0){
+    h+='<h4 style="color:#fff;margin-bottom:4px">📊 申购资金对照表 <span style="color:var(--gold);font-size:0.75em">📋 招股书原文</span></h4>';
+    h+='<p style="color:var(--muted);font-size:0.68em;margin-bottom:10px">本金=申购金额．10 | </p>';
+    h+='<div style="overflow-x:auto"><table class="tbl" style="font-size:0.75em"><thead><tr><th>申购手数</th><th>申购金额(HKD)</th><th>需本金</th></tr></thead><tbody>';
+    s.allLots.forEach(function(p){
+      h+='<tr><td class="num">'+p.lots.toLocaleString()+'</td><td class="num">'+p.amt.toLocaleString(undefined,{minimumFractionDigits:2,maximumFractionDigits:2})+'</td><td class="num">'+(p.amt/10/1e4).toFixed(1)+'万</td></tr>';
+    });
+    h+='</tbody></table></div>';
+  } else {
+    h+='<h4 style="color:#fff;margin-bottom:4px">📊 申购资金对照表 <span style="color:var(--orange);font-size:0.7em">⚠️ 缺招股书PDF</span></h4>';
+  }
+  h+='</div>';
+
+  document.getElementById('modalContent').innerHTML=h;
+  document.getElementById('modalOverlay').style.display='flex';
+}
+function addSub(code){
+  const s = IPO_DATA.find(x=>x.code===code); if(!s) return;
+  const subs = JSON.parse(localStorage.getItem('ipo_subs')||'[]');
+  // 同名同账户已存在则跳过
+  if(subs.find(x=>x.code===code&&x.account==='账户A')){ switchTab('subs'); toast('已存在','info'); return; }
+  const amount = s.fee * 1;
+  subs.push({
+    id: Date.now().toString(),
+    code, name:s.name, type:s.type,
+    account: '账户A', tier: '一手摸奖', lots: 1,
+    amount, frozen: amount + COMMISSION,
+    subEnd: s.subEnd, listDate: s.listDate, fee:s.fee, lot:s.lot,
+    sellPrice:null, sellDate:null
+  });
+  localStorage.setItem('ipo_subs',JSON.stringify(subs));
+  switchTab('subs'); toast('✅ 已添加一手摸奖 → 账户A','success');
+}
+// A+H 实时价格数据
+const AH_FX = 0.92; // 1 HKD ≈ 0.92 CNY
+let ahLiveData = {}; // {ahCode: {price, name, time}}
+
+let ahFetching = false;
+function fetchAHPrices(){
+  if(ahFetching) return;
+  const ahStocks = IPO_DATA.filter(s=>s.type==='ah'&&s.ahCode);
+  if(!ahStocks.length) return;
+  ahFetching = true;
+  let pending = ahStocks.length;
+  ahStocks.forEach(s=>{
+    fetch('http://localhost:8766/api/ah_price?code='+s.ahCode)
+    .then(r=>r.json()).then(d=>{
+      if(d&&d.price){
+        ahLiveData[s.ahCode] = d;
+        const hPrice = parseHPrice(s.price);
+        const hCny = hPrice * AH_FX;
+        const disc = ((hCny - d.price) / d.price * 100).toFixed(1);
+        s.ahPrice = '¥'+d.price.toFixed(2);
+        s.ahDisc = (disc>0?'+':'')+disc+'%';
+      }
+    }).catch(()=>{}).finally(()=>{
+      pending--;
+      if(pending===0){ ahFetching = false; if(currentTab==='list'){ var app=document.getElementById('app'); app.innerHTML=renderListTab(); updateTabBar(); } }
+    });
+  });
+}
+function parseHPrice(priceStr){
+  // "30.00-32.30" → 32.30, "≤45.98" → 45.98, "380.00" → 380.00
+  const m = priceStr.match(/[\d.]+$/);
+  return m ? parseFloat(m[0]) : 0;
+}
+
+function closeModal(){ document.getElementById('modalOverlay').style.display='none'; }
+function toast(msg,type){
+  const c = document.getElementById('toastContainer');
+  const el = document.createElement('div');
+  el.className = `toast toast-${type}`; el.textContent = msg;
+  c.appendChild(el);
+  setTimeout(()=>{el.style.opacity='0';el.style.transition='opacity .3s';setTimeout(()=>el.remove(),300)},2000);
+}
+
+// Initial render with error catch
+window.onerror=function(msg,src,line,col,err){
+  document.body.innerHTML='<div style="background:#0d1117;color:#e74c3c;padding:40px;font-family:sans-serif"><h2>JS 错误</h2><pre style="white-space:pre-wrap;word-break:break-all">'+msg+'\n\nLine: '+line+', Col: '+col+'\n\n'+((err&&err.stack)||'')+'</pre></div>';
+};
+// 启动时：已卖出记录自动加入折叠集合
+(function(){
+  let subs=JSON.parse(localStorage.getItem('ipo_subs')||'[]');
+  subs.forEach(s=>{ if(s.sellPrice) hiddenSubs.add(s.id); });
+  localStorage.setItem('ipo_subs_hidden',JSON.stringify([...hiddenSubs]));
+})();
+
+try{ render(); }catch(e){
+  document.body.innerHTML='<div style="background:#0d1117;color:#e74c3c;padding:40px;font-family:sans-serif"><h2>渲染错误</h2><pre>'+e.message+'\n\n'+e.stack+'</pre></div>';
+}
+
+// 页面加载时自动从本地JSON文件拉取最新数据
+(function(){
+  var xhr=new XMLHttpRequest();
+  xhr.open('GET','ipo_data_auto.json?t='+Date.now(),true);
+  xhr.onload=function(){
+    if(xhr.status===200){
+      try{
+        var d=JSON.parse(xhr.responseText);
+        if(Array.isArray(d)&&d.length>0){
+          d.forEach(function(n){
+            var i=IPO_DATA.findIndex(function(x){return x.code===n.code;});
+            if(i>=0){
+              // 浅合并：保留 HTML 内嵌的 allLots/jiaTiers 等招股书原始数据，不被 JSON 覆盖丢失
+              var keep=['allLots','jiaTiers','ahDisc','ahPrice'];
+              var existing=IPO_DATA[i];
+              IPO_DATA[i]=n;
+              keep.forEach(function(k){ if(existing[k]!==undefined && n[k]===undefined) IPO_DATA[i][k]=existing[k]; });
+            } else {
+              IPO_DATA.push(n);
+            }
+          });
+          IPO_DATA.sort(function(a,b){return a.listDate.localeCompare(b.listDate);});
+          if(currentTab==='list') render();
+        }
+      }catch(e){}
+    }
+  };
+  xhr.send();
+})();
+
+// 启动后拉取A+H实时股价
+setTimeout(fetchAHPrices, 500);
+
+// 全局：输入框中按方向键等同于回车（触发 onchange）
+document.addEventListener('keydown', function(e){
+  if(!['ArrowUp','ArrowDown','ArrowLeft','ArrowRight'].includes(e.key)) return;
+  if(e.target.tagName!=='INPUT') return;
+  if(e.target.readOnly) return;
+  if(e.target.type==='date') return; // 日期输入保留原生方向键行为
+  e.preventDefault();
+  e.target.blur();
+});
 </script>
 </body>
 </html>
