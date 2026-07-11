@@ -146,10 +146,11 @@ async function loadIPOData() {
   try {
     const resp = await fetch('data.json');
     IPO_DATA = await resp.json();
-loadIPOData();
+    render();
   } catch(e) {
     console.error('加载数据失败，使用缓存:', e);
   }
+}
 // Also define hearing/listening pipeline data for toolbox
 const PIPELINE = [{"name":"本末动力(北京)科技","date":"2026-06-29","stage":"通过聆讯"},{"name":"厦门瑞为信息技术","date":"2026-06-29","stage":"通过聆讯"},{"name":"上海哥瑞利软件","date":"2026-06-24","stage":"通过聆讯"},{"name":"广东鼎泰高科技术","date":"2026-06-24","stage":"通过聆讯"},{"name":"坦博尔集团","date":"2026-06-23","stage":"通过聆讯"},{"name":"普源精电","date":"2026-06-23","stage":"通过聆讯"},{"name":"立讯精密","date":"2026-06-24","stage":"通过聆讯"},{"name":"三环集团","date":"2026-06-23","stage":"通过聆讯"}];
 
