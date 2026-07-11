@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-<title>港新股日历</title>
+<title>港股打新助手</title>
 <style>
 :root{--red:#e74c3c;--green:#27ae60;--orange:#f39c12;--bg:#0d1117;--card:#161b22;--border:#30363d;--text:#c9d1d9;--muted:#8b949e;--accent:#58a6ff;--gold:#f0c040}
 *{margin:0;padding:0;box-sizing:border-box}
@@ -205,7 +205,7 @@ function renderCalendarTab(){
   const subs = JSON.parse(localStorage.getItem('ipo_subs')||'[]');
   const conflict = findConflicts();
 
-  let html = '<div class="header"><h1>📅 新股日历</h1><span class="update" id="serverStatus" style="cursor:pointer" onclick="refreshFromServer()" title="点击从本地服务刷新">🔄 点击刷新</span></div>';
+  let html = '<div class="header"><h1>📊 港股打新助手</h1><span class="update" id="serverStatus" style="cursor:pointer" onclick="refreshFromServer()" title="点击从本地服务刷新">🔄 点击刷新</span></div>';
 
   // Stats
   html += `<div class="stat-row">
