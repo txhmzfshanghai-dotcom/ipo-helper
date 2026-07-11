@@ -212,7 +212,7 @@ function renderCalendarTab(){
   const subs = JSON.parse(localStorage.getItem('ipo_subs')||'[]');
   const conflict = findConflicts();
 
-  let html = '<div class="header"><h1>📊 港股打新助手</h1><span class="update" id="serverStatus" style="cursor:pointer" onclick="refreshFromServer()" title="点击从本地服务刷新">🔄 点击刷新</span></div>';
+  let html = '<div class="header"><h1>📊 港股打新助手</h1><span class="update" id="serverStatus" style="cursor:pointer" onclick="refreshFromServer()" title="点击从本地服务刷新">🔄 点击刷新最新数据</span></div>';
 
   // Stats
   html += `<div class="stat-row">
@@ -2341,21 +2341,15 @@ function showManualUpdate(){
 // 自动刷新：从本地服务器拉数据
 async function refreshFromServer(){
   try{
-    const resp=await fetch('http://localhost:8766/api/refresh');
-    const json=await resp.json();
-    if(json.success){
-      json.data.forEach(n=>{
-        const i=IPO_DATA.findIndex(x=>x.code===n.code);
-        if(i>=0) IPO_DATA[i]={...IPO_DATA[i],...n};
-        else IPO_DATA.push(n);
-      });
-      IPO_DATA.sort((a,b)=>a.listDate.localeCompare(b.listDate));
-      render(); toast('✅ 刷新成功: '+json.count+'只新股','success');
-    } else {
-      toast('⚠️ 抓取失败，使用缓存: '+json.data.length+'只','error');
-      if(json.data.length) applyServerData(json.data);
-    }
-  }catch(e){toast('❌ 无法连接本地服务(端口8766)，请启动 ipo_server.js','error');}
+    const resp = await fetch('data.json');
+    if(!resp.ok) throw new Error('HTTP '+resp.status);
+    IPO_DATA = await resp.json();
+    render();
+    toast('✅ 数据已更新: '+IPO_DATA.length+'只新股','success');
+  }catch(e){
+    toast('❌ 数据更新失败，请稍后重试','error');
+    console.error(e);
+  }
 }
 function applyServerData(data){
   data.forEach(n=>{
